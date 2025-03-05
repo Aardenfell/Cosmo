@@ -8,7 +8,17 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
+const config = require("../../../config.json");
+
 const streamersFilePath = path.join(__dirname, "../../../data/twitch-streamers.json");
+
+
+/**
+ * Checks if the user has the admin role.
+ */
+function hasAdminRole(member) {
+    return member.roles.cache.has(config.permissions.admin);
+}
 
 /**
  * Read the latest streamers list dynamically.
@@ -72,6 +82,15 @@ module.exports = {
 		const subcommand = interaction.options.getSubcommand();
 		const streamerName = interaction.options.getString("name")?.toLowerCase();
 		const streamers = getStreamers();
+		const member = interaction.member;
+
+		// Restrict "add" and "remove" to Admins only
+		if (["add", "remove"].includes(subcommand) && !hasAdminRole(member)) {
+			return await interaction.reply({
+				content: "❌ You do not have permission to use this command.",
+				ephemeral: true,
+			});
+		}
 
 		if (subcommand === "add") {
 			if (streamers.includes(streamerName)) {
