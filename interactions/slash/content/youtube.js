@@ -9,8 +9,17 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 const { getChannelId } = require("../../../utils/youtube");
+const config = require("../../../config.json");
 
 const streamersFilePath = path.join(__dirname, "../../../data/youtube-streamers.json");
+
+/**
+ * Checks if the user has the admin role.
+ */
+function hasAdminRole(member) {
+    return member.roles.cache.has(config.permissions.admin);
+}
+
 
 /**
  * Read the latest YouTube streamers list dynamically.
@@ -74,6 +83,15 @@ module.exports = {
 		const subcommand = interaction.options.getSubcommand();
 		const input = interaction.options.getString("name_or_id");
 		const streamers = getYouTubeStreamers();
+        const member = interaction.member;
+
+        // Restrict "add" and "remove" to Admins only
+		if (["add", "remove"].includes(subcommand) && !hasAdminRole(member)) {
+			return await interaction.reply({
+				content: "❌ You do not have permission to use this command.",
+				ephemeral: true,
+			});
+		}
 
 		if (subcommand === "add") {
 			await interaction.deferReply({ ephemeral: true });
