@@ -17,12 +17,12 @@
 	"author": {
 		"name": ""
 	},
-	"contributors": [
-	],
+	"contributors": [],
 	"license": "MIT",
 	"homepage": "",
 	"dependencies": {
 		"@discordjs/rest": "^1.0.0",
+		"axios": "^1.8.1",
 		"discord-api-types": "^0.36.2",
 		"discord.js": "^14.0.2"
 	}
