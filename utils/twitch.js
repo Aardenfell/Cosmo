@@ -1,12 +1,18 @@
+/**
+ * @file Twitch API Utility Functions
+ * @author Aardenfell
+ * @since 1.0.0
+ * @version 1.0.0
+ */
+
 const axios = require("axios");
 const fs = require("fs");
 const config = require("../config.json");
 
-let accessToken = null;
-
 /**
  * Fetch Twitch OAuth Token
  */
+let accessToken = null;
 async function getTwitchToken() {
     try {
         const response = await axios.post("https://id.twitch.tv/oauth2/token", null, {
@@ -45,8 +51,7 @@ async function checkStreamerLive(username) {
             }
         });
 
-        const stream = response.data.data[0]; // Twitch API returns an array
-        return stream || null;
+        return response.data.data[0] || null;
     } catch (error) {
         console.error(`Error checking stream for ${username}:`, error.response?.data || error.message);
         return null;
@@ -54,11 +59,16 @@ async function checkStreamerLive(username) {
 }
 
 /**
- * Get all streamers from the `streamers.json` file.
+ * Dynamically get all streamers from `data/twitch-streamers.json`.
  */
 function getStreamers() {
-    const data = fs.readFileSync("./data/streamers.json");
-    return JSON.parse(data).streamers;
+    try {
+        const data = fs.readFileSync("./data/twitch-streamers.json", "utf8");
+        return JSON.parse(data).streamers || [];
+    } catch (error) {
+        console.error("Error reading Twitch streamers file:", error);
+        return [];
+    }
 }
 
 module.exports = {
