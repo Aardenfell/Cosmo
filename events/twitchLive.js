@@ -44,6 +44,10 @@ async function announceLiveStream(client, channelId, streamData) {
     const channel = await client.channels.fetch(channelId);
     if (!channel) return console.error(`Channel ID ${channelId} not found.`);
 
+    const roleMention = config.permissions.content_notifier
+        ? `<@&${config.permissions.content_notifier}>`
+        : "";
+
     const embed = new EmbedBuilder()
         .setColor("#6441A5")
         .setTitle(`${streamData.user_name} is now LIVE on Twitch!`)
@@ -52,7 +56,10 @@ async function announceLiveStream(client, channelId, streamData) {
         .setImage(streamData.thumbnail_url.replace("{width}", "1280").replace("{height}", "720"))
         .setFooter({ text: "Click the title to watch the stream!" });
 
-    channel.send({ content: `🎮 **${streamData.user_name}** is now live! Go check them out!`, embeds: [embed] });
+        channel.send({
+            content: `${roleMention} 🎮 **${streamData.user_name}** is now live! Go check them out!`,
+            embeds: [embed]
+        });
 }
 
 /**
