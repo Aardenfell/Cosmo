@@ -1,5 +1,5 @@
 /**
- * @file YouTube Video Upload Announcement Handler
+ * @file YouTube Video Upload Announcement Handler with Role Ping
  * @author Aardenfell
  * @since 1.0.0
  * @version 1.0.0
@@ -11,10 +11,13 @@ const config = require("../config.json");
 
 const CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
+/**
+ * Periodically check for new YouTube video uploads.
+ */
 async function checkYouTubeVideos(client) {
     const announceChannelId = config.youtube.announce_channel;
     if (!announceChannelId) {
-        console.error("YouTube announce channel not set in config.json!");
+        console.error("YouTube announce channel is not set in config.json!");
         return;
     }
 
@@ -28,21 +31,38 @@ async function checkYouTubeVideos(client) {
         seenVideos[channel_id] = latestVideo.id;
         saveSeenVideos(seenVideos);
 
-        const channel = await client.channels.fetch(announceChannelId);
-        if (!channel) return console.error(`Channel ID ${announceChannelId} not found.`);
-
-        const videoEmbed = new EmbedBuilder()
-            .setColor("#FF0000")
-            .setTitle(`📢 New Video by ${name}!`)
-            .setURL(latestVideo.url)
-            .setDescription(`**${latestVideo.title}**`)
-            .setThumbnail(latestVideo.thumbnail)
-            .setFooter({ text: "Click the title to watch the video!" });
-
-        channel.send({ embeds: [videoEmbed] });
+        announceYouTubeVideo(client, announceChannelId, latestVideo, name);
     }
 }
 
+/**
+ * Announce a new YouTube video upload.
+ */
+async function announceYouTubeVideo(client, channelId, videoData, streamerName) {
+    const channel = await client.channels.fetch(channelId);
+    if (!channel) return console.error(`Channel ID ${channelId} not found.`);
+
+    const roleMention = config.permissions.content_notifier
+        ? `<@&${config.permissions.content_notifier}>`
+        : "";
+
+    const embed = new EmbedBuilder()
+        .setColor("#FF0000") // YouTube red
+        .setTitle(`${streamerName} uploaded a new video!`)
+        .setURL(videoData.url)
+        .setDescription(`**${videoData.title}**`)
+        .setImage(videoData.thumbnail.replace("{width}", "1280").replace("{height}", "720"))
+        .setFooter({ text: "Click the title to watch the video!" });
+
+    channel.send({
+        content: `${roleMention} 🎥 **${streamerName}** just uploaded a new video! Check it out!`,
+        embeds: [embed]
+    });
+}
+
+/**
+ * Start the YouTube video check loop.
+ */
 module.exports = {
     name: "ready",
     once: true,
