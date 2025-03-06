@@ -46,7 +46,7 @@ async function addXP(userId, guild, xpGain, method) {
     let xpData = loadXPData();
 
     if (!xpData.users[userId]) {
-        xpData.users[userId] = { xp: 0, level: 1, last_message_xp: 0, last_voice_xp: 0, last_reaction_xp: 0 };
+        xpData.users[userId] = { xp: 0, level: 0, last_message_xp: 0, last_voice_xp: 0, last_reaction_xp: 0 };
     }
 
     const userXP = xpData.users[userId];
@@ -75,7 +75,7 @@ async function addXP(userId, guild, xpGain, method) {
         const levelupChannelId = config.leveling.levelup_messages.channel_id;
         const channel = guild.channels.cache.get(levelupChannelId);
         if (channel) {
-            channel.send(`✧ Congratulations, <@${userId}>! You reached **Level ${userXP.level}**! ˚ʚ♡ɞ˚`);
+            channel.send(`✧ Congratulations, <@${userId}>! You've reached **Level ${userXP.level}**! ˚ʚ♡ɞ˚`);
         }
     }
 }
