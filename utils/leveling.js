@@ -2,7 +2,7 @@
  * @file Leveling Utility (Handles XP, Level-Ups & Rewards)
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.2.0
+ * @version 1.3.0
  */
 
 const fs = require("fs");
@@ -37,7 +37,7 @@ function getXPForNextLevel(level) {
 }
 
 /**
- * Assign role rewards based on level.
+ * Assign role rewards based on level and update 1st Place role.
  */
 async function assignRoleRewards(member, newLevel) {
     const guild = member.guild;
@@ -58,23 +58,33 @@ async function assignRoleRewards(member, newLevel) {
         }
     }
 
-    // Find and assign "1st Place" role
+    // Find "1st Place" role
     const firstPlaceRole = guild.roles.cache.find(role => role.name === "1st Place");
     if (firstPlaceRole) {
-        const topUser = Object.entries(loadXPData().users)
-            .sort(([, a], [, b]) => b.level - a.level)[0]; // Get highest-level user
+        // Determine the new highest-level user
+        const topUserId = Object.entries(loadXPData().users)
+            .sort(([, a], [, b]) => b.level - a.level || b.xp - a.xp)[0][0];
 
-        if (topUser && topUser[0] === member.user.id) {
-            if (!member.roles.cache.has(firstPlaceRole.id)) {
-                await member.roles.add(firstPlaceRole);
+        if (topUserId) {
+            const previousHolder = guild.members.cache.find(m => m.roles.cache.has(firstPlaceRole.id));
+            const newFirstPlace = await guild.members.fetch(topUserId);
+
+            if (previousHolder && previousHolder.id !== newFirstPlace.id) {
+                await previousHolder.roles.remove(firstPlaceRole);
+                console.log(`🏆 Removed "1st Place" role from ${previousHolder.user.username}`);
+            }
+
+            if (!newFirstPlace.roles.cache.has(firstPlaceRole.id)) {
+                await newFirstPlace.roles.add(firstPlaceRole);
                 firstPlaceGained = true;
-                console.log(`🏆 ${member.user.username} is now the highest level and received ${firstPlaceRole.name}!`);
+                console.log(`🏆 ${newFirstPlace.user.username} is now the highest level and received ${firstPlaceRole.name}!`);
             }
         }
     }
 
     return { earnedRoles, firstPlaceGained };
 }
+
 
 /**
  * Add XP to a user, handle level-ups, assign roles, and send a level-up message.
