@@ -69,7 +69,7 @@ module.exports = {
     name: "ready",
     once: true,
     async execute(client) {
-        console.log("Twitch live check started.");
+        console.log("✅ Twitch live check started.");
         setInterval(() => checkLiveStreams(client), CHECK_INTERVAL);
     }
 };
