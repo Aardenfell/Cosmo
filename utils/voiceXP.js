@@ -2,10 +2,10 @@
  * @file Voice XP Handler 
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.1.0
+ * @version 1.1.1
  */
 
-const { addXP, loadXPData, saveXPData } = require("./leveling");
+const { addXP } = require("./leveling"); // ✅ Removed `loadXPData` & `saveXPData`
 const { activeVoiceUsers } = require("./voiceTracking");
 const config = require("../config.json");
 
@@ -20,8 +20,7 @@ async function checkVoiceXP(client) {
     if (activeVoiceUsers.size === 0) return; // No active users, stop checking
 
     const { min_xp, max_xp, cooldown } = config.leveling.xp_methods.voice_xp;
-    const now = Date.now();
-    let xpData = loadXPData();
+    const now = Math.floor(Date.now() / 1000);
 
     console.log("🔍 Checking voice XP for active users...");
 
@@ -38,28 +37,19 @@ async function checkVoiceXP(client) {
             continue;
         }
 
-        const userXP = xpData.users[userId] || { xp: 0, level: 0, last_voice_xp: 0 };
-
-        // Calculate time spent in VC
-        const timeSpent = (now - data.joinedAt) / 1000; // Convert ms → seconds
-        console.log(`🕒 ${user.username} has been in VC for ${timeSpent} seconds.`);
+        console.log(`🕒 ${user.username} has been in VC for ${(now - Math.floor(data.joinedAt / 1000))} seconds.`);
 
         // If user has been in VC for cooldown duration, award XP
-        if (timeSpent >= cooldown && now - userXP.last_voice_xp >= cooldown) {
+        if (now - Math.floor(data.joinedAt / 1000) >= cooldown) {
             const xpGain = Math.floor(Math.random() * (max_xp - min_xp + 1)) + min_xp;
             console.log(`✅ Awarding ${xpGain} XP to ${user.username}`);
 
-            await addXP(userId, guild, xpGain, "voice_xp");
+            await addXP(userId, guild, xpGain, "voice_xp"); 
 
-            // Update last XP time
-            userXP.last_voice_xp = Math.floor(now / 1000);
-            saveXPData(xpData);
         } else {
             console.log(`⏳ ${user.username} has not yet reached cooldown.`);
         }
     }
-
-    saveXPData(xpData);
 }
 
 /**
