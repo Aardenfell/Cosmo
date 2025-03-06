@@ -50,7 +50,7 @@ async function checkVoiceXP(client) {
             await addXP(userId, guild, xpGain, "voice_xp");
 
             // Update last XP time
-            userXP.last_voice_xp = now;
+            userXP.last_voice_xp = Math.floor(now / 1000);
             saveXPData(xpData);
         } else {
             console.log(`⏳ ${user.username} has not yet reached cooldown.`);
