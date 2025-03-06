@@ -73,9 +73,13 @@ async function checkVoiceXP(client) {
 }
 
 /**
- * Start the XP check interval.
+ * Start the XP check interval on bot startup.
  */
-module.exports.startVoiceXP = (client) => {
-    console.log("Voice XP tracking started.");
-    setInterval(() => checkVoiceXP(client), 60 * 1000); // Now checking every 60s for more accuracy
+module.exports = {
+    name: "ready",
+    once: true,
+    async execute(client) {
+        console.log("✅ Voice XP tracking started.");
+        setInterval(() => checkVoiceXP(client), CHECK_INTERVAL);
+    }
 };
