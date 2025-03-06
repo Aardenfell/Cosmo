@@ -2,7 +2,7 @@
  * @file Voice XP Handler 
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 const { addXP, loadXPData, saveXPData } = require("./leveling");
@@ -10,12 +10,14 @@ const { activeVoiceUsers } = require("./voiceTracking");
 const config = require("../config.json");
 
 const CHECK_INTERVAL = 60 * 1000; // Check every 60s
+let voiceXPInterval = null; // Stores the interval ID
 
 /**
  * Periodically check voice XP and grant XP.
  */
 async function checkVoiceXP(client) {
     if (!config.leveling.enabled || !config.leveling.xp_methods.voice_xp.enabled) return;
+    if (activeVoiceUsers.size === 0) return; // No active users, stop checking
 
     const { min_xp, max_xp, cooldown } = config.leveling.xp_methods.voice_xp;
     const now = Date.now();
@@ -60,11 +62,25 @@ async function checkVoiceXP(client) {
     saveXPData(xpData);
 }
 
-module.exports = {
-    name: "ready",
-    once: true,
-    async execute(client) {
-        console.log("✅ Voice XP tracking started.");
-        setInterval(() => checkVoiceXP(client), CHECK_INTERVAL);
+/**
+ * Start the Voice XP interval if not already running.
+ */
+function startVoiceXP(client) {
+    if (voiceXPInterval) return; // Already running
+    console.log("✅ Voice XP tracking started.");
+
+    voiceXPInterval = setInterval(() => checkVoiceXP(client), CHECK_INTERVAL);
+}
+
+/**
+ * Stop the Voice XP interval if no one is in VC.
+ */
+function stopVoiceXP() {
+    if (activeVoiceUsers.size === 0 && voiceXPInterval) {
+        clearInterval(voiceXPInterval);
+        voiceXPInterval = null;
+        console.log("🛑 Voice XP tracking stopped (No users in VC).");
     }
-};
+}
+
+module.exports = { startVoiceXP, stopVoiceXP };
