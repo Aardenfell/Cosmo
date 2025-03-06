@@ -2,15 +2,18 @@
  * @file YouTube Live Stream Announcement Handler
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 
-const { checkLiveStream, getYouTubeStreamers, getSeenVideos, saveSeenVideos } = require("../utils/youtube");
+const { checkLiveStream, getYouTubeStreamers } = require("../utils/youtube");
 const { EmbedBuilder } = require("discord.js");
 const config = require("../config.json");
 
-const CHECK_INTERVAL = 60 * 1000; // 60 seconds
-const liveStreamers = new Set(); // Track announced streamers
+const CHECK_INTERVAL = 3 * 60 * 1000; // 3 minutes (Previously 1 minute) || Reduces amount of API calls
+const CACHE_TIMEOUT = 10 * 60 * 1000; // 10 minutes (Skip API calls for offline users)
+
+const liveStreamers = new Set(); // Tracks announced live streamers
+const offlineCache = new Map(); // Cache to delay checking offline streamers
 
 /**
  * Periodically check for live YouTube streams.
@@ -23,16 +26,23 @@ async function checkYouTubeLive(client) {
     }
 
     const streamers = getYouTubeStreamers();
-    const seenVideos = getSeenVideos();
+    const currentTime = Date.now();
 
     for (const { channel_id, name } of streamers) {
+        // If a streamer was offline recently, skip checking them for CACHE_TIMEOUT
+        if (offlineCache.has(channel_id) && currentTime - offlineCache.get(channel_id) < CACHE_TIMEOUT) {
+            continue;
+        }
+
         const liveStream = await checkLiveStream(channel_id);
 
         if (liveStream && !liveStreamers.has(channel_id)) {
             liveStreamers.add(channel_id);
+            offlineCache.delete(channel_id); // Remove from offline cache
             announceLiveStream(client, announceChannelId, liveStream, name);
         } else if (!liveStream) {
             liveStreamers.delete(channel_id);
+            offlineCache.set(channel_id, currentTime); // Add to offline cache
         }
     }
 }
@@ -56,10 +66,10 @@ async function announceLiveStream(client, channelId, streamData, streamerName) {
         .setImage(streamData.thumbnail.replace("{width}", "1280").replace("{height}", "720"))
         .setFooter({ text: "Click the title to watch the stream!" });
 
-        channel.send({
-            content: `${roleMention} 📺 **${streamerName}** is now live! Go check them out!`,
-            embeds: [embed]
-        });
+    channel.send({
+        content: `${roleMention} 📺 **${streamerName}** is now live! Go check them out!`,
+        embeds: [embed]
+    });
 }
 
 /**
@@ -69,7 +79,7 @@ module.exports = {
     name: "ready",
     once: true,
     async execute(client) {
-        console.log("YouTube live check started.");
+        console.log("Optimized YouTube live check started.");
         setInterval(() => checkYouTubeLive(client), CHECK_INTERVAL);
     }
 };
