@@ -47,13 +47,14 @@ module.exports = {
 
         // Fetch member object to check for server-specific avatar
         const member = await interaction.guild.members.fetch(targetUser.id);
+        const displayName = member.nickname || targetUser.displayName;
         const avatarURL = member.avatar
             ? member.displayAvatarURL({ dynamic: true }) // Server-specific avatar
             : targetUser.displayAvatarURL({ dynamic: true }); // Default avatar
 
         const embed = new EmbedBuilder()
             .setColor("#8f69f8") // Cozy lilac color
-            .setTitle(`Level Info for ${targetUser.displayName}`)
+            .setTitle(`Level Info for ${displayName}`)
             .setThumbnail(avatarURL)
             .setDescription(
                 `🏆 **Place:** ${userRank}${getOrdinalSuffix(userRank)}\n` +
