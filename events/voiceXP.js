@@ -43,14 +43,15 @@ async function checkVoiceXP(client) {
         console.log(`🕒 ${user.username} has been in VC for ${timeSpent} seconds.`);
 
         // If user has been in VC for cooldown duration, award XP
-        if (timeSpent >= cooldown && now - userXP.last_voice_xp >= cooldown * 1000) {
+        if (timeSpent >= cooldown && now - userXP.last_voice_xp >= cooldown) {
             const xpGain = Math.floor(Math.random() * (max_xp - min_xp + 1)) + min_xp;
             console.log(`✅ Awarding ${xpGain} XP to ${user.username}`);
 
             await addXP(userId, guild, xpGain, "voice_xp");
 
             // Update last XP time
-            activeVoiceUsers.set(userId, { ...data, lastXP: now });
+            userXP.last_voice_xp = now;
+            saveXPData(xpData);
         } else {
             console.log(`⏳ ${user.username} has not yet reached cooldown.`);
         }
