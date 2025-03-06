@@ -2,7 +2,7 @@
  * @file Level Command for Checking User Levels
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.1.0
+ * @version 1.1.1
  */
 
 // Deconstructed the constants we need in this file.
@@ -45,10 +45,16 @@ module.exports = {
         const { xp, level } = userData;
         const xpNeeded = getXPForNextLevel(level) - xp;
 
+        // Fetch member object to check for server-specific avatar
+        const member = await interaction.guild.members.fetch(targetUser.id);
+        const avatarURL = member.avatar
+            ? member.displayAvatarURL({ dynamic: true }) // Server-specific avatar
+            : targetUser.displayAvatarURL({ dynamic: true }); // Default avatar
+
         const embed = new EmbedBuilder()
             .setColor("#8f69f8") // Cozy lilac color
             .setTitle(`Level Info for ${targetUser.username}`)
-            .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
+            .setThumbnail(avatarURL)
             .setDescription(
                 `🏆 **Place:** ${userRank}${getOrdinalSuffix(userRank)}\n` +
                 `🌟 **Level:** ${level}\n` +
