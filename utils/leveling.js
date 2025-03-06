@@ -135,4 +135,5 @@ async function addXP(userId, guild, xpGain, method) {
     }
 }
 
-module.exports = { addXP, getXPForNextLevel, loadXPData, saveXPData };
+module.exports = { addXP, getXPForNextLevel, loadXPData, saveXPData, assignRoleRewards };
+
