@@ -5,8 +5,8 @@
  * @version 1.0.0
  */
 
-const { addXP, loadXPData, saveXPData } = require("../utils/leveling");
-const { activeVoiceUsers } = require("../utils/voiceTracking");
+const { addXP, loadXPData, saveXPData } = require("./leveling");
+const { activeVoiceUsers } = require("./voiceTracking");
 const config = require("../config.json");
 
 const CHECK_INTERVAL = 60 * 1000; // Check every 60s

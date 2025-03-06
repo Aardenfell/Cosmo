@@ -9,7 +9,7 @@
 
 const { Collection, ChannelType } = require("discord.js");
 const { prefix, owner } = require("../config.json");
-const { handleMessageXP } = require("./messageXP");
+const { handleMessageXP } = require("../utils/messageXP");
 
 // Prefix regex, we will use to match in mention prefix.
 

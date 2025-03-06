@@ -1,11 +1,11 @@
 /**
- * @file Message XP Handler for Leveling System (Modularized)
+ * @file Message XP Handler
  * @author Aardenfell
  * @since 1.0.0
  * @version 1.0.0
  */
 
-const { addXP } = require("../utils/leveling");
+const { addXP } = require("./leveling");
 const config = require("../config.json");
 
 async function handleMessageXP(message) {
