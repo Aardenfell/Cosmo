@@ -2,7 +2,7 @@
  * @file Leaderboard Command for Displaying XP Rankings
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
@@ -46,10 +46,9 @@ module.exports = {
                 : firstPlaceMember.user.displayAvatarURL({ dynamic: true }); // Default avatar
         }
 
-        // Format leaderboard text
+        // Format leaderboard text with mentions
         const leaderboardText = topUsers.map(([id, data], index) => {
-            const member = guild.members.cache.get(id);
-            return `**${index + 1}.** ${member ? member.user.username : "Unknown User"} - 🏆 Level ${data.level} (${data.xp} XP)`;
+            return `**${index + 1}.** <@${id}> - 🏆 Level ${data.level} (${data.xp} XP)`;
         }).join("\n");
 
         // Get current user's rank if they aren't in the top 10
