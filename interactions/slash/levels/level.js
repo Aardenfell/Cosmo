@@ -53,7 +53,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor("#8f69f8") // Cozy lilac color
-            .setTitle(`Level Info for ${targetUser.username}`)
+            .setTitle(`Level Info for ${targetUser.displayName}`)
             .setThumbnail(avatarURL)
             .setDescription(
                 `🏆 **Place:** ${userRank}${getOrdinalSuffix(userRank)}\n` +
