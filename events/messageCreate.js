@@ -9,6 +9,7 @@
 
 const { Collection, ChannelType } = require("discord.js");
 const { prefix, owner } = require("../config.json");
+const { handleMessageXP } = require("./messageXP");
 
 // Prefix regex, we will use to match in mention prefix.
 
@@ -27,6 +28,9 @@ module.exports = {
 
 	async execute(message) {
 		// Declares const to be used.
+
+		// Process XP first (but only if not a command)
+        await handleMessageXP(message);
 
 		const { client, guild, channel, content, author } = message;
 
