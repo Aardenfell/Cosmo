@@ -1,44 +1,15 @@
 /**
- * @file Voice XP Handler
+ * @file Voice XP Handler 
  * @author Aardenfell
  * @since 1.0.0
  * @version 1.0.0
  */
 
 const { addXP, loadXPData, saveXPData } = require("../utils/leveling");
+const { activeVoiceUsers } = require("../utils/voiceTracking");
 const config = require("../config.json");
 
-const activeVoiceUsers = new Map(); // Tracks when users join VC
 const CHECK_INTERVAL = 60 * 1000; // Check every 60s
-
-/**
- * Handle users joining/leaving voice channels.
- */
-module.exports = {
-    name: "voiceStateUpdate",
-    
-    async execute(oldState, newState) {
-        if (!config.leveling.enabled || !config.leveling.xp_methods.voice_xp.enabled) return;
-
-        const userId = newState.member.id;
-        const guild = newState.guild;
-
-        // User joins a voice channel
-        if (!oldState.channelId && newState.channelId) {
-            console.log(`🎤 User ${newState.member.user.username} joined VC.`);
-            activeVoiceUsers.set(userId, {
-                joinedAt: Date.now(),
-                lastXP: 0
-            });
-        }
-
-        // User leaves a voice channel
-        if (oldState.channelId && !newState.channelId) {
-            console.log(`🚪 User ${newState.member.user.username} left VC.`);
-            activeVoiceUsers.delete(userId);
-        }
-    }
-};
 
 /**
  * Periodically check voice XP and grant XP.
@@ -88,9 +59,6 @@ async function checkVoiceXP(client) {
     saveXPData(xpData);
 }
 
-/**
- * Start the XP check interval on bot startup.
- */
 module.exports = {
     name: "ready",
     once: true,
