@@ -2,7 +2,7 @@
  * @file Leveling Utility (Handles XP, Level-Ups & Rewards)
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 const fs = require("fs");
@@ -45,6 +45,7 @@ async function assignRoleRewards(member, newLevel) {
 
     let earnedRoles = [];
     let firstPlaceGained = false;
+    let firstPlaceUser = null;
 
     // Find level roles dynamically (e.g., "Level 5", "Level 10")
     const levelRoles = guild.roles.cache.filter(role => role.name.startsWith("Level "));
@@ -77,17 +78,36 @@ async function assignRoleRewards(member, newLevel) {
             if (!newFirstPlace.roles.cache.has(firstPlaceRole.id)) {
                 await newFirstPlace.roles.add(firstPlaceRole);
                 firstPlaceGained = true;
+                firstPlaceUser = newFirstPlace;
                 console.log(`🏆 ${newFirstPlace.user.username} is now the highest level and received ${firstPlaceRole.name}!`);
             }
+        }
+    }
+
+    // 🎤 Send announcement (NEW: Consolidated Here)
+    if (config.leveling.levelup_messages.enabled) {
+        const levelupChannelId = config.leveling.levelup_messages.channel_id;
+        const channel = guild.channels.cache.get(levelupChannelId);
+        if (channel) {
+            let message = `✧ Congratulations, <@${member.user.id}>! You've reached **Level ${newLevel}**! ˚ʚ♡ɞ˚`;
+
+            if (earnedRoles.length > 0) {
+                message += `\nYou have earned the following roles: ${earnedRoles.join(", ")}`;
+            }
+
+            if (firstPlaceGained && firstPlaceUser) {
+                message += `\n<@${firstPlaceUser.user.id}> You are now the highest level and have received the **1st Place** role! 🏆`;
+            }
+
+            channel.send(message);
         }
     }
 
     return { earnedRoles, firstPlaceGained };
 }
 
-
 /**
- * Add XP to a user, handle level-ups, assign roles, and send a level-up message.
+ * Add XP to a user, handle level-ups, and assign roles.
  */
 async function addXP(userId, guild, xpGain, method) {
     if (!config.leveling.enabled || !config.leveling.xp_methods[method].enabled) return;
@@ -123,27 +143,8 @@ async function addXP(userId, guild, xpGain, method) {
     // Assign role rewards if the user leveled up
     if (leveledUp) {
         const member = await guild.members.fetch(userId);
-        const { earnedRoles, firstPlaceGained } = await assignRoleRewards(member, userXP.level);
-
-        if (config.leveling.levelup_messages.enabled) {
-            const levelupChannelId = config.leveling.levelup_messages.channel_id;
-            const channel = guild.channels.cache.get(levelupChannelId);
-            if (channel) {
-                let message = `✧ Congratulations, <@${userId}>! You've reached **Level ${userXP.level}**! ˚ʚ♡ɞ˚`;
-
-                if (earnedRoles.length > 0) {
-                    message += `\nYou have earned the following roles: ${earnedRoles.join(", ")}`;
-                }
-
-                if (firstPlaceGained) {
-                    message += `\nYou are now the highest level and have received the **1st Place** role! 🏆`;
-                }
-
-                channel.send(message);
-            }
-        }
+        await assignRoleRewards(member, userXP.level);
     }
 }
 
 module.exports = { addXP, getXPForNextLevel, loadXPData, saveXPData, assignRoleRewards };
-
