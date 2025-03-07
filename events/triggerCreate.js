@@ -18,37 +18,35 @@ module.exports = {
 		// Ignore bot messages
 		if (message.author.bot) return;
 
-		// Extract words from the message
-		const args = message.content.split(/ +/);
-
-		// Flag to determine if a trigger has been executed
+		const messageContent = message.content.toLowerCase();
 		let triggered = false;
 
 		// Loop through all registered triggers
-		message.client.triggers.every((trigger) => {
-			if (triggered) return false; // Stop checking if a trigger was already executed
+		for (const trigger of message.client.triggers.values()) {
+			if (triggered) break; // Stop checking if a trigger was already executed
 
-			// Loop through each keyword in the trigger's name array
-			trigger.name.forEach(async (name) => {
-				if (triggered) return;
+			for (const name of trigger.name) {
+				if (triggered) break;
+
+				// Create regex with word boundaries to prevent partial matches
+				const regex = new RegExp(`\\b${name}\\b`, "i");
 
 				// If message contains the trigger word
-				if (message.content.includes(name)) {
+				if (regex.test(messageContent)) {
 					try {
-						await trigger.execute(message, args);
+						await trigger.execute(message);
 					} catch (error) {
+						console.error(error);
 						message.reply({
 							content: "❌ There was an error trying to execute that trigger!",
 						});
 					}
 
-					// Mark trigger as executed and stop checking further
+					// Mark trigger as executed and stop further matches
 					triggered = true;
-					return false;
+					break;
 				}
-			});
-
-			return true; // Continue checking other triggers if none have executed
-		});
+			}
+		}
 	},
 };
