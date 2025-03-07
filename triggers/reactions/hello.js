@@ -2,7 +2,7 @@
  * @file Hello Trigger command.
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.0.1
+ * @version 1.0.2
  */
 
 // For now, the only available property is name array. Not making the name array will result in an error.
@@ -14,7 +14,7 @@ const path = require("path");
  * @type {import('../../typings').TriggerCommand}
  */
 module.exports = {
-	name: ["hello"],
+	name: ["hello", "hi", "heller"],
 
 	execute(message, args) {
 		// Define the path to the image
