@@ -2,7 +2,7 @@
  * @file Voice State Update Handler 
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.3.0
+ * @version 1.4.0
  */
 
 const { activeVoiceUsers } = require("../utils/voiceTracking");
@@ -39,6 +39,24 @@ module.exports = {
             console.log(`🚪 User ${member.user.username} left VC OR is muted/deafened/suppressed.`);
             activeVoiceUsers.delete(userId);
             stopVoiceXP();
+        }
+
+        // **User becomes undeafened/unmuted/unsuppressed**
+        if (
+            oldState.selfDeaf && !newState.selfDeaf ||  // Undeafened
+            oldState.serverDeaf && !newState.serverDeaf ||  // Server Undeafened
+            oldState.suppress && !newState.suppress  // Unsuppressed
+        ) {
+            console.log(`🔊 User ${member.user.username} is now active in VC again.`);
+            
+            if (!activeVoiceUsers.has(userId)) {
+                activeVoiceUsers.set(userId, {
+                    joinedAt: Date.now(),
+                    lastXP: 0
+                });
+
+                startVoiceXP(newState.client);
+            }
         }
     }
 };
