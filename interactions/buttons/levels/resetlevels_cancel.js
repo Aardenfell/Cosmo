@@ -30,7 +30,7 @@ module.exports = {
 
         // Send cancel message
         const embed = new EmbedBuilder()
-            .setColor("Gray")
+            .setColor("#444444")
             .setTitle("❌ Reset Cancelled")
             .setDescription("No changes were made.");
 
