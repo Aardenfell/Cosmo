@@ -2,7 +2,7 @@
  * @file Main trigger handler file.
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.0.0
+ * @version 1.0.1
  */
 
 module.exports = {
@@ -15,52 +15,40 @@ module.exports = {
 	 */
 
 	async execute(message) {
-		/**
-		 * @description The Message Content of the received message seperated by spaces (' ') in an array, this excludes prefix and command/alias itself.
-		 */
-
-		const args = message.content.split(/ +/);
-
-		// Checks if the trigger author is a bot. Comment this line if you want to reply to bots as well.
-
+		// Ignore bot messages
 		if (message.author.bot) return;
 
-		// Checking ALL triggers using every function and breaking out if a trigger was found.
+		// Extract words from the message
+		const args = message.content.split(/ +/);
 
-		/**
-		 * Checks if the message has a trigger.
-		 * @type {Boolean}
-		 * */
-
+		// Flag to determine if a trigger has been executed
 		let triggered = false;
 
+		// Loop through all registered triggers
 		message.client.triggers.every((trigger) => {
-			if (triggered) return false;
+			if (triggered) return false; // Stop checking if a trigger was already executed
 
-			trigger.name.every(async (name) => {
-				if (triggered) return false;
+			// Loop through each keyword in the trigger's name array
+			trigger.name.forEach(async (name) => {
+				if (triggered) return;
 
-				// If validated, it will try to execute the trigger.
-
+				// If message contains the trigger word
 				if (message.content.includes(name)) {
 					try {
-						trigger.execute(message, args);
+						await trigger.execute(message, args);
 					} catch (error) {
-						// If triggereds fail, reply back!
-
-						console.error(error);
-
 						message.reply({
-							content: "there was an error trying to execute that trigger!",
+							content: "❌ There was an error trying to execute that trigger!",
 						});
 					}
 
-					// Set the trigger to be true & return.
-
+					// Mark trigger as executed and stop checking further
 					triggered = true;
 					return false;
 				}
 			});
+
+			return true; // Continue checking other triggers if none have executed
 		});
 	},
 };
