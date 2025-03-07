@@ -2,7 +2,7 @@
  * @file Leaderboard Command for Displaying XP Rankings
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.1.0
+ * @version 1.2.0
  */
 
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
@@ -13,10 +13,17 @@ const { loadXPData } = require("../../../utils/leveling");
  */
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName("leaderboard")
-        .setDescription("View the top XP earners in the server."),
+        .setName("levels")
+        .setDescription("Manage and check the leveling system.")
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("leaderboard")
+                .setDescription("View the top XP earners in the server.")
+        ),
 
     async execute(interaction) {
+        if (interaction.options.getSubcommand() !== "leaderboard") return;
+
         const xpData = loadXPData();
         const guild = interaction.guild;
 

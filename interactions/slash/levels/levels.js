@@ -2,7 +2,7 @@
  * @file Level Command for Checking User Levels
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.1.1
+ * @version 1.1.2
  */
 
 // Deconstructed the constants we need in this file.
@@ -15,7 +15,7 @@ const { loadXPData, getXPForNextLevel } = require("../../../utils/leveling");
 module.exports = {
     // The data needed to register slash commands to Discord.
     data: new SlashCommandBuilder()
-        .setName("level")
+        .setName("levels")
         .setDescription("Check your level or someone else's.")
         .addUserOption(option =>
             option
