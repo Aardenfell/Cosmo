@@ -2,7 +2,7 @@
  * @file Set Level Command (Admin Only)
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 // Deconstruct the required modules
@@ -48,6 +48,12 @@ module.exports = {
         const newLevel = interaction.options.getInteger("level");
 
         let xpData = loadXPData();
+
+        // Identify the current top user before changes
+        const sortedUsers = Object.entries(xpData.users)
+            .sort(([, a], [, b]) => b.level - a.level);
+        const previousTopUserId = sortedUsers.length > 0 ? sortedUsers[0][0] : null;
+
         if (!xpData.users[targetUser.id]) {
             xpData.users[targetUser.id] = { xp: 0, level: 0, last_message_xp: 0, last_voice_xp: 0, last_reaction_xp: 0 };
         }
@@ -66,6 +72,11 @@ module.exports = {
         // Assign roles based on the new level
         const { earnedRoles, firstPlaceGained } = await assignRoleRewards(targetMember, userXP.level);
 
+        // Identify the new top user after the changes
+        const updatedSortedUsers = Object.entries(loadXPData().users)
+            .sort(([, a], [, b]) => b.level - a.level);
+        const newTopUserId = updatedSortedUsers.length > 0 ? updatedSortedUsers[0][0] : null;
+
         // Construct the level-up message
         const levelupChannelId = config.leveling.levelup_messages.channel_id;
         const channel = guild.channels.cache.get(levelupChannelId);
@@ -76,8 +87,8 @@ module.exports = {
                 message += `\nYou have earned the following roles: ${earnedRoles.join(", ")}`;
             }
 
-            if (firstPlaceGained) {
-                message += `\nYou are now the highest level and have received the **1st Place** role! 🏆`;
+            if (newTopUserId && newTopUserId !== previousTopUserId) {
+                message += `\n<@${newTopUserId}> You are now the highest level and have received the **1st Place** role! 🏆`;
             }
 
             channel.send(message);
