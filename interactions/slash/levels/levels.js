@@ -2,7 +2,7 @@
  * @file Levels Command Handler
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.0.1
+ * @version 1.1.0
  */
 
 const { SlashCommandBuilder } = require("discord.js");
@@ -74,7 +74,23 @@ module.exports = {
             subcommand
                 .setName("reset")
                 .setDescription("Reset all users' XP and levels. (Admin only)")
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("config")
+                .setDescription("View or edit the leveling configuration.")
+                .addStringOption(option =>
+                    option.setName("field")
+                        .setDescription("The config field to modify (leave empty to view the config).")
+                        .setRequired(false)
+                )
+                .addStringOption(option =>
+                    option.setName("value")
+                        .setDescription("The new value to set.")
+                        .setRequired(false)
+                )
         ),
+        
 
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand();
