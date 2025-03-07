@@ -2,13 +2,29 @@
  * @file Voice Hub Handler (Creates and manages temporary voice chats)
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 const { ChannelType, PermissionsBitField } = require("discord.js");
+const fs = require("fs");
+const path = require("path");
 const config = require("../config.json");
 
-const activeTempVCs = new Map(); // Track active temp VCs
+const TEMP_VC_FILE = path.join(__dirname, "../data/temp_vcs.json");
+
+// Load active VCs from storage
+function loadActiveVCs() {
+    if (!fs.existsSync(TEMP_VC_FILE)) return {};
+    return JSON.parse(fs.readFileSync(TEMP_VC_FILE, "utf8"));
+}
+
+// Save active VCs to storage
+function saveActiveVCs(data) {
+    fs.writeFileSync(TEMP_VC_FILE, JSON.stringify(data, null, 4), "utf8");
+}
+
+// Initialize active VCs from storage
+let activeTempVCs = loadActiveVCs();
 
 module.exports = {
     name: "voiceStateUpdate",
@@ -17,44 +33,58 @@ module.exports = {
         if (!config.voice_hubs.enabled) return;
 
         const member = newState.member;
-        const newChannel = newState.channel;
         const guild = newState.guild;
+        const oldChannel = oldState.channel;
+        const newChannel = newState.channel;
 
-        if (!newChannel) return; // Ignore if user is leaving
+        // **HANDLE USER JOINING HUB**
+        if (newChannel) {
+            const hubConfig = config.voice_hubs.hubs.find(h => h.channel_id === newChannel.id);
+            if (hubConfig) {
+                // Enforce VC limit
+                if (Object.keys(activeTempVCs).length >= config.voice_hubs.vc_limit) {
+                    return member.send("❌ No available temporary voice channels. Try again later!");
+                }
 
-        // Check if the joined channel is a hub
-        const hubConfig = config.voice_hubs.hubs.find(h => h.channel_id === newChannel.id);
-        if (!hubConfig) return;
+                // Create a new temp VC
+                const tempVC = await guild.channels.create({
+                    name: `${hubConfig.base_name} - ${member.user.username}`,
+                    type: ChannelType.GuildVoice,
+                    parent: hubConfig.category_id,
+                    userLimit: config.voice_hubs.vc_user_limit,
+                    permissionOverwrites: [
+                        {
+                            id: guild.id,
+                            allow: [PermissionsBitField.Flags.Connect, PermissionsBitField.Flags.ViewChannel],
+                        },
+                        {
+                            id: member.id,
+                            allow: [PermissionsBitField.Flags.ManageChannels, PermissionsBitField.Flags.MoveMembers],
+                        }
+                    ]
+                });
 
-        // Enforce VC limit
-        if (activeTempVCs.size >= config.voice_hubs.vc_limit) {
-            return member.send("❌ No available temporary voice channels. Try again later!");
+                console.log(`✅ Created Temp VC: ${tempVC.name}`);
+
+                // Move the user to the temp VC
+                await member.voice.setChannel(tempVC);
+
+                // Store the VC
+                activeTempVCs[tempVC.id] = tempVC.id;
+                saveActiveVCs(activeTempVCs);
+            }
         }
 
-        // Create a new temp VC
-        const tempVC = await guild.channels.create({
-            name: `${hubConfig.base_name} - ${member.user.username}`,
-            type: ChannelType.GuildVoice,
-            parent: hubConfig.category_id,
-            userLimit: config.voice_hubs.vc_user_limit,
-            permissionOverwrites: [
-                {
-                    id: guild.id,
-                    allow: [PermissionsBitField.Flags.Connect, PermissionsBitField.Flags.ViewChannel],
-                },
-                {
-                    id: member.id,
-                    allow: [PermissionsBitField.Flags.ManageChannels, PermissionsBitField.Flags.MoveMembers],
-                }
-            ]
-        });
+        // **HANDLE EMPTY TEMP VC DELETION**
+        if (oldChannel && activeTempVCs[oldChannel.id]) {
+            const tempVC = guild.channels.cache.get(oldChannel.id);
 
-        console.log(`✅ Created Temp VC: ${tempVC.name}`);
-
-        // Move the user to the temp VC
-        await member.voice.setChannel(tempVC);
-
-        // Store the VC to track when to delete it
-        activeTempVCs.set(tempVC.id, tempVC);
+            if (tempVC && tempVC.members.size === 0) {
+                console.log(`🗑 Deleting empty Temp VC: ${tempVC.name}`);
+                await tempVC.delete();
+                delete activeTempVCs[oldChannel.id];
+                saveActiveVCs(activeTempVCs);
+            }
+        }
     }
 };
