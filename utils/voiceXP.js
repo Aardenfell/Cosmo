@@ -2,10 +2,10 @@
  * @file Voice XP Handler 
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.1.1
+ * @version 1.3.0
  */
 
-const { addXP } = require("./leveling"); // ✅ Removed `loadXPData` & `saveXPData`
+const { addXP } = require("./leveling"); 
 const { activeVoiceUsers } = require("./voiceTracking");
 const config = require("../config.json");
 
@@ -34,6 +34,25 @@ async function checkVoiceXP(client) {
         const guild = client.guilds.cache.find(g => g.members.cache.has(userId));
         if (!guild) {
             console.log(`❌ User ${userId} not found in any guild.`);
+            continue;
+        }
+
+        const member = await guild.members.fetch(userId);
+        const voiceState = member.voice;
+
+        // **EXCLUSION CHECKS**
+        if (voiceState.serverDeaf || voiceState.selfDeaf) {
+            console.log(`🚫 ${user.username} is deafened (No XP granted).`);
+            continue;
+        }
+
+        if (voiceState.serverMute) {
+            console.log(`🚫 ${user.username} is server-muted (No XP granted).`);
+            continue;
+        }
+
+        if (voiceState.suppress) {
+            console.log(`🚫 ${user.username} is suppressed (No XP granted).`);
             continue;
         }
 
