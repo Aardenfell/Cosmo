@@ -2,7 +2,7 @@
  * @file Leveling Utility (Handles XP, Level-Ups & Rewards)
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.3.1
+ * @version 1.3.2
  */
 
 const fs = require("fs");
@@ -46,6 +46,7 @@ async function assignRoleRewards(member, newLevel) {
     let earnedRoles = [];
     let firstPlaceGained = false;
     let firstPlaceUser = null;
+    let previousFirstPlaceUser = null;
 
     // Find level roles dynamically (e.g., "Level 5", "Level 10")
     const levelRoles = guild.roles.cache.filter(role => role.name.startsWith("Level "));
@@ -63,28 +64,31 @@ async function assignRoleRewards(member, newLevel) {
     const firstPlaceRole = guild.roles.cache.find(role => role.name === "1st Place");
     if (firstPlaceRole) {
         // Determine the new highest-level user
-        const topUserId = Object.entries(loadXPData().users)
-            .sort(([, a], [, b]) => b.level - a.level || b.xp - a.xp)[0][0];
+        const sortedUsers = Object.entries(loadXPData().users)
+            .sort(([, a], [, b]) => b.level - a.level || b.xp - a.xp);
+        
+        const topUserId = sortedUsers.length > 0 ? sortedUsers[0][0] : null;
 
         if (topUserId) {
-            const previousHolder = guild.members.cache.find(m => m.roles.cache.has(firstPlaceRole.id));
-            const newFirstPlace = await guild.members.fetch(topUserId);
+            // Fetch the current 1st place holder
+            previousFirstPlaceUser = guild.members.cache.find(m => m.roles.cache.has(firstPlaceRole.id));
+            firstPlaceUser = await guild.members.fetch(topUserId);
 
-            if (previousHolder && previousHolder.id !== newFirstPlace.id) {
-                await previousHolder.roles.remove(firstPlaceRole);
-                console.log(`🏆 Removed "1st Place" role from ${previousHolder.user.username}`);
+            // If a different user takes 1st place, reassign the role
+            if (previousFirstPlaceUser && previousFirstPlaceUser.id !== firstPlaceUser.id) {
+                await previousFirstPlaceUser.roles.remove(firstPlaceRole);
+                console.log(`🏆 Removed "1st Place" role from ${previousFirstPlaceUser.user.username}`);
             }
 
-            if (!newFirstPlace.roles.cache.has(firstPlaceRole.id)) {
-                await newFirstPlace.roles.add(firstPlaceRole);
+            if (!firstPlaceUser.roles.cache.has(firstPlaceRole.id)) {
+                await firstPlaceUser.roles.add(firstPlaceRole);
                 firstPlaceGained = true;
-                firstPlaceUser = newFirstPlace;
-                console.log(`🏆 ${newFirstPlace.user.username} is now the highest level and received ${firstPlaceRole.name}!`);
+                console.log(`🏆 ${firstPlaceUser.user.username} is now the highest level and received ${firstPlaceRole.name}!`);
             }
         }
     }
 
-    // 🎤 Send announcement (NEW: Consolidated Here)
+    // 🎤 Send announcement (NOW WITH SMART MENTIONS)
     if (config.leveling.levelup_messages.enabled) {
         const levelupChannelId = config.leveling.levelup_messages.channel_id;
         const channel = guild.channels.cache.get(levelupChannelId);
@@ -95,8 +99,15 @@ async function assignRoleRewards(member, newLevel) {
                 message += `\nYou have earned the following roles: ${earnedRoles.join(", ")}`;
             }
 
+            // 🔹 Handle 1st place messaging smartly:
             if (firstPlaceGained && firstPlaceUser) {
-                message += `\n<@${firstPlaceUser.user.id}> You are now the highest level and have received the **1st Place** role! 🏆`;
+                if (firstPlaceUser.id === member.user.id) {
+                    // The user who leveled up is also now 1st place → No duplicate mention
+                    message += `\nYou are now the highest level and have received the **1st Place** role! 🏆`;
+                } else {
+                    // Someone ELSE became first place → Mention them separately
+                    message += `\n<@${firstPlaceUser.user.id}>, you are now the highest level and have received the **1st Place** role! 🏆`;
+                }
             }
 
             channel.send(message);
@@ -105,6 +116,7 @@ async function assignRoleRewards(member, newLevel) {
 
     return { earnedRoles, firstPlaceGained };
 }
+
 
 /**
  * Add XP to a user, handle level-ups, and assign roles.
