@@ -79,7 +79,7 @@ module.exports = {
     name: "ready",
     once: true,
     async execute(client) {
-        console.log("Optimized YouTube live check started.");
+        console.log("✅ YouTube live check started.");
         setInterval(() => checkYouTubeLive(client), CHECK_INTERVAL);
     }
 };

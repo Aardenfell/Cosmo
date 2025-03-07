@@ -78,7 +78,7 @@ module.exports = {
     name: "ready",
     once: true,
     async execute(client) {
-        console.log("YouTube video check (RSS) started.");
+        console.log("✅ YouTube video check (RSS) started.");
         setInterval(() => checkYouTubeVideos(client), CHECK_INTERVAL);
     }
 };
