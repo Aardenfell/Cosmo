@@ -2,7 +2,7 @@
  * @file Levels Command Handler
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.0.0
+ * @version 1.0.1
  */
 
 const { SlashCommandBuilder } = require("discord.js");
@@ -78,14 +78,15 @@ module.exports = {
 
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand();
-        const subcommandFile = `../../../interactions/slash/levels/${subcommand}.js`;
+        const subcommandsPath = path.join(__dirname, "subcommands");
 
-        if (fs.existsSync(path.join(__dirname, subcommandFile))) {
-            const command = require(subcommandFile);
-            return command.execute(interaction);
-        } else {
+        try {
+            const subcommandFile = require(`${subcommandsPath}/${subcommand}.js`);
+            await subcommandFile.execute(interaction);
+        } catch (error) {
+            console.error(`❌ Subcommand '${subcommand}' not found.`);
             return interaction.reply({
-                content: "❌ Subcommand not found!",
+                content: "❌ Invalid subcommand.",
                 ephemeral: true
             });
         }
