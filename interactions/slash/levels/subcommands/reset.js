@@ -2,11 +2,11 @@
  * @file Reset Levels Command (Admin Only)
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.1.0
+ * @version 2.0.0
  */
 
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
-const config = require("../../../config.json");
+const {EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const config = require("../../../../config.json");
 
 /**
  * Checks if the user has the admin role.
@@ -16,15 +16,6 @@ function hasAdminRole(member) {
 }
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("levels")
-        .setDescription("Manage and modify user XP and levels. (Admin only)")
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName("reset")
-                .setDescription("Resets all users' XP and levels.")
-        ),
-
     async execute(interaction) {
         if (interaction.options.getSubcommand() !== "reset") return;
 

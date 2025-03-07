@@ -2,12 +2,11 @@
  * @file Set XP/Level Command (Admin Only)
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.4.0
+ * @version 2.0.0
  */
 
-const { SlashCommandBuilder } = require("discord.js");
-const { loadXPData, saveXPData, assignRoleRewards, getXPForNextLevel } = require("../../../utils/leveling");
-const config = require("../../../config.json");
+const { loadXPData, saveXPData, assignRoleRewards, getXPForNextLevel } = require("../../../../utils/leveling");
+const config = require("../../../../config.json");
 
 /**
  * Checks if the user has the admin role.
@@ -17,34 +16,6 @@ function hasAdminRole(member) {
 }
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("levels")
-        .setDescription("Manage and modify user XP and levels. (Admin only)")
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName("set")
-                .setDescription("Set a user's XP or level manually.")
-                .addStringOption(option =>
-                    option.setName("type")
-                        .setDescription("Choose whether to modify XP or level.")
-                        .setRequired(true)
-                        .addChoices(
-                            { name: "XP", value: "xp" },
-                            { name: "Level", value: "level" }
-                        )
-                )
-                .addUserOption(option =>
-                    option.setName("user")
-                        .setDescription("The user whose XP or level you want to modify.")
-                        .setRequired(true)
-                )
-                .addIntegerOption(option =>
-                    option.setName("amount")
-                        .setDescription("The amount to set (XP or Level).")
-                        .setRequired(true)
-                )
-        ),
-
     async execute(interaction) {
         if (interaction.options.getSubcommand() !== "set") return;
 

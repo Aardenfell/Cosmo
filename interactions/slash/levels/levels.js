@@ -1,81 +1,93 @@
 /**
- * @file Level Command for Checking User Levels
+ * @file Levels Command Handler
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.1.2
+ * @version 1.0.0
  */
 
-// Deconstructed the constants we need in this file.
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { loadXPData, getXPForNextLevel } = require("../../../utils/leveling");
+const { SlashCommandBuilder } = require("discord.js");
+const fs = require("fs");
+const path = require("path");
 
 /**
  * @type {import('../../../typings').SlashInteractionCommand}
  */
 module.exports = {
-    // The data needed to register slash commands to Discord.
     data: new SlashCommandBuilder()
         .setName("levels")
-        .setDescription("Check your level or someone else's.")
-        .addUserOption(option =>
-            option
-                .setName("user")
-                .setDescription("The user whose level you want to check.")
+        .setDescription("Manage and check the leveling system.")
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("info")
+                .setDescription("Check your level or someone else's.")
+                .addUserOption(option =>
+                    option
+                        .setName("user")
+                        .setDescription("The user whose level you want to check.")
+                )
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("leaderboard")
+                .setDescription("View the top XP earners in the server.")
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("method")
+                .setDescription("Toggle an XP earning method on or off. (Admin only)")
+                .addStringOption(option =>
+                    option.setName("method")
+                        .setDescription("The XP method to toggle (message_xp, voice_xp, reaction_xp)")
+                        .setRequired(true)
+                        .addChoices(
+                            { name: "Message XP", value: "message_xp" },
+                            { name: "Voice XP", value: "voice_xp" },
+                            { name: "Reaction XP", value: "reaction_xp" }
+                        )
+                )
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("set")
+                .setDescription("Set a user's level or XP. (Admin only)")
+                .addUserOption(option =>
+                    option.setName("user")
+                        .setDescription("The user whose level or XP you want to set.")
+                        .setRequired(true)
+                )
+                .addStringOption(option =>
+                    option.setName("type")
+                        .setDescription("What to set (level or XP).")
+                        .setRequired(true)
+                        .addChoices(
+                            { name: "Level", value: "level" },
+                            { name: "XP", value: "xp" }
+                        )
+                )
+                .addIntegerOption(option =>
+                    option.setName("amount")
+                        .setDescription("The amount to set.")
+                        .setRequired(true)
+                )
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("reset")
+                .setDescription("Reset all users' XP and levels. (Admin only)")
         ),
 
     async execute(interaction) {
-        const targetUser = interaction.options.getUser("user") || interaction.user;
-        const xpData = loadXPData();
-        const userData = xpData.users[targetUser.id];
+        const subcommand = interaction.options.getSubcommand();
+        const subcommandFile = `../../../interactions/slash/levels/${subcommand}.js`;
 
-        if (!userData) {
+        if (fs.existsSync(path.join(__dirname, subcommandFile))) {
+            const command = require(subcommandFile);
+            return command.execute(interaction);
+        } else {
             return interaction.reply({
-                content: `❌ **${targetUser.username}** has no recorded XP.`,
+                content: "❌ Subcommand not found!",
                 ephemeral: true
             });
         }
-
-        // Sort users by level (highest first), then XP as a tiebreaker
-        const sortedUsers = Object.entries(xpData.users)
-            .sort(([, a], [, b]) => (b.level === a.level ? b.xp - a.xp : b.level - a.level));
-
-        // Find user's position (rank)
-        const userRank = sortedUsers.findIndex(([id]) => id === targetUser.id) + 1;
-
-        const { xp, level } = userData;
-        const xpNeeded = getXPForNextLevel(level) - xp;
-
-        // Fetch member object to check for server-specific avatar
-        const member = await interaction.guild.members.fetch(targetUser.id);
-        const displayName = member.nickname || targetUser.displayName;
-        const avatarURL = member.avatar
-            ? member.displayAvatarURL({ dynamic: true }) // Server-specific avatar
-            : targetUser.displayAvatarURL({ dynamic: true }); // Default avatar
-
-        const embed = new EmbedBuilder()
-            .setColor("#8f69f8") // Cozy lilac color
-            .setTitle(`Level Info for ${displayName}`)
-            .setThumbnail(avatarURL)
-            .setDescription(
-                `🏆 **Place:** ${userRank}${getOrdinalSuffix(userRank)}\n` +
-                `🌟 **Level:** ${level}\n` +
-                `📈 **XP:** ${xp} XP\n` +
-                `🎯 **XP Needed for Next Level:** ${xpNeeded} XP`
-            );
-
-        interaction.reply({ embeds: [embed] });
     }
 };
-
-/**
- * Returns the ordinal suffix for a given number (1st, 2nd, 3rd, etc.).
- */
-function getOrdinalSuffix(rank) {
-    if (rank % 100 >= 11 && rank % 100 <= 13) return "th";
-    switch (rank % 10) {
-        case 1: return "st";
-        case 2: return "nd";
-        case 3: return "rd";
-        default: return "th";
-    }
-}

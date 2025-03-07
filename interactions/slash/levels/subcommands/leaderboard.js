@@ -5,22 +5,13 @@
  * @version 1.2.0
  */
 
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { loadXPData } = require("../../../utils/leveling");
+const { EmbedBuilder } = require("discord.js");
+const { loadXPData } = require("../../../../utils/leveling");
 
 /**
- * @type {import('../../../typings').SlashInteractionCommand}
+ * @type {import('../../../../typings').SlashInteractionCommand}
  */
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("levels")
-        .setDescription("Manage and check the leveling system.")
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName("leaderboard")
-                .setDescription("View the top XP earners in the server.")
-        ),
-
     async execute(interaction) {
         if (interaction.options.getSubcommand() !== "leaderboard") return;
 

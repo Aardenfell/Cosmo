@@ -2,13 +2,12 @@
  * @file Toggle XP Method Command (Admin Only)
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 // Deconstruct the required modules
-const { SlashCommandBuilder } = require("discord.js");
 const fs = require("fs");
-const config = require("../../../config.json");
+const config = require("../../../../config.json");
 
 /**
  * Checks if the user has the admin role.
@@ -25,28 +24,9 @@ function saveConfig(updatedConfig) {
 }
 
 /**
- * @type {import('../../../typings').SlashInteractionCommand}
+ * @type {import('../../../../typings').SlashInteractionCommand}
  */
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("levels")
-        .setDescription("Manage and check the leveling system.")
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName("method")
-                .setDescription("Toggle an XP earning method on or off. (Admin only)")
-                .addStringOption(option =>
-                    option.setName("method")
-                        .setDescription("The XP method to toggle (message_xp, voice_xp, reaction_xp)")
-                        .setRequired(true)
-                        .addChoices(
-                            { name: "Message XP", value: "message_xp" },
-                            { name: "Voice XP", value: "voice_xp" },
-                            { name: "Reaction XP", value: "reaction_xp" }
-                        )
-                )
-        ),
-
     async execute(interaction) {
         if (interaction.options.getSubcommand() !== "method") return;
 
