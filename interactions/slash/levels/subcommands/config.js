@@ -33,7 +33,7 @@ module.exports = {
             return interaction.reply({ content: "❌ You do not have permission to modify the configuration.", ephemeral: true });
         }
 
-        // Create an improved embed layout
+        // Create an embed layout
         const embed = new EmbedBuilder()
             .setColor("#8f69f8")
             .setTitle("📜 Leveling Configuration")
