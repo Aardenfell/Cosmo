@@ -2,7 +2,7 @@
  * @file Voice Hub Handler (Creates and manages temporary voice chats)
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.2.0
+ * @version 1.3.0
  */
 
 const { ChannelType, PermissionsBitField } = require("discord.js");
@@ -76,6 +76,41 @@ module.exports = {
                 };
 
                 saveActiveVCs(activeTempVCs);
+            }
+        }
+
+        // **HANDLE OWNER LEAVING (30-Second Grace Period)**
+        if (oldChannel && activeTempVCs[oldChannel.id]) {
+            const tempVC = guild.channels.cache.get(oldChannel.id);
+
+            if (tempVC && oldState.member.id === activeTempVCs[oldChannel.id].owner_id) {
+                setTimeout(async () => {
+                    const updatedVC = guild.channels.cache.get(oldChannel.id);
+                    
+                    if (!updatedVC) return; // Channel was deleted during delay
+
+                    const remainingMembers = [...updatedVC.members.values()];
+                    if (remainingMembers.length === 0) {
+                        console.log(`🗑 Deleting empty Temp VC: ${updatedVC.name}`);
+                        await updatedVC.delete();
+                        delete activeTempVCs[oldChannel.id];
+                        saveActiveVCs(activeTempVCs);
+                        return;
+                    }
+
+                    // Select a new owner
+                    const newOwner = remainingMembers[Math.floor(Math.random() * remainingMembers.length)];
+                    activeTempVCs[oldChannel.id].owner_id = newOwner.id;
+                    saveActiveVCs(activeTempVCs);
+
+                    // Rename the VC to reflect new owner
+                    const hubConfig = config.voice_hubs.hubs.find(h => h.category_id === updatedVC.parentId);
+                    if (hubConfig) {
+                        await updatedVC.setName(`✧ ${hubConfig.base_name} ${newOwner.user.username}'s VC ✧`);
+                    }
+
+                    console.log(`🔄 Transferred ownership to ${newOwner.user.username}`);
+                }, 30000); // 30-second grace period
             }
         }
 
