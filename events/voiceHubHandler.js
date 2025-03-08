@@ -2,7 +2,7 @@
  * @file Voice Hub Handler (Creates and manages temporary voice chats)
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.3.0
+ * @version 1.4.0
  */
 
 const { ChannelType, PermissionsBitField } = require("discord.js");
@@ -46,22 +46,47 @@ module.exports = {
                     return member.send("❌ No available temporary voice channels. Try again later!");
                 }
 
+                // Fetch hub channel permissions
+                const hubChannel = guild.channels.cache.get(hubConfig.channel_id);
+                if (!hubChannel) return console.error(`❌ Hub channel not found: ${hubConfig.channel_id}`);
+
+                let permissionOverwrites = hubChannel.permissionOverwrites.cache.map(overwrite => ({
+                    id: overwrite.id,
+                    allow: overwrite.allow,
+                    deny: overwrite.deny
+                }));
+
+                // Ensure @everyone can connect
+                const everyonePerms = permissionOverwrites.find(perm => perm.id === guild.id);
+                if (everyonePerms) {
+                    everyonePerms.allow.add(PermissionsBitField.Flags.Connect);
+                } else {
+                    permissionOverwrites.push({
+                        id: guild.id,
+                        allow: [PermissionsBitField.Flags.Connect],
+                        deny: []
+                    });
+                }
+
+                // Add owner-specific permissions
+                permissionOverwrites.push({
+                    id: member.id,
+                    allow: [
+                        PermissionsBitField.Flags.ManageChannels,
+                        PermissionsBitField.Flags.MoveMembers,
+                        PermissionsBitField.Flags.MuteMembers,
+                        PermissionsBitField.Flags.DeafenMembers
+                    ],
+                    deny: []
+                });
+
                 // Create a new temp VC
                 const tempVC = await guild.channels.create({
                     name: `✧ ${hubConfig.base_name} ${member.user.username}'s VC ✧`,
                     type: ChannelType.GuildVoice,
                     parent: hubConfig.category_id,
                     userLimit: config.voice_hubs.vc_user_limit,
-                    permissionOverwrites: [
-                        {
-                            id: guild.id,
-                            allow: [PermissionsBitField.Flags.Connect, PermissionsBitField.Flags.ViewChannel],
-                        },
-                        {
-                            id: member.id,
-                            allow: [PermissionsBitField.Flags.ManageChannels, PermissionsBitField.Flags.MoveMembers],
-                        }
-                    ]
+                    permissionOverwrites
                 });
 
                 console.log(`✅ Created Temp VC: ${tempVC.name}`);
