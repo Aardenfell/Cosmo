@@ -10,7 +10,13 @@ const { SlashCommandBuilder, PermissionsBitField } = require("discord.js");
 const path = require("path");
 const fs = require("fs");
 const config = require("../../../config.json");
-const tempVCs = require("../../../temp_vcs.json");
+
+const TEMP_VC_FILE = path.join(__dirname, "../../../data/temp_vcs.json");
+
+function loadTempVCs() {
+    if (!fs.existsSync(TEMP_VC_FILE)) return {};
+    return JSON.parse(fs.readFileSync(TEMP_VC_FILE, "utf8"));
+}
 
 /**
  * Checks if the user has the admin role.
@@ -87,7 +93,7 @@ module.exports = {
         }
 
         // Check if the VC is a tracked temporary VC
-        const tempVCData = tempVCs[userVC.id];
+        const tempVCData = loadTempVCs()[userVC.id];
         if (!tempVCData) {
             return interaction.reply({
                 content: "❌ This command can only be used in a temporary voice channel.",
