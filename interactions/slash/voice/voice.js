@@ -76,6 +76,17 @@ module.exports = {
             subcommand
                 .setName("claim")
                 .setDescription("Assign ownership of VC to yourself.")
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("vc_limit")
+                .setDescription("Modify the temporary VC limit. (Admin Only)")
+                .addIntegerOption(option =>
+                    option.setName("limit")
+                        .setDescription("The maximum number of active temp VCs.")
+                        .setRequired(true)
+                )
+                .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator) // Hides from non-admins
         ),
 
     async execute(interaction) {
