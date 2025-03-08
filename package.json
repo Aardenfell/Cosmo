@@ -1,30 +1,29 @@
 {
-	"name": "test",
-	"version": "",
-	"description": "",
+	"name": "cosmo",
+	"version": "0.5.0",
+	"description": "custom tailored discord bot for the Cosmic Cove community discord server",
 	"types": "./typings.d.ts",
 	"main": "bot.js",
-	"scripts": {
-		"start": "node bot.js"
-	},
-	"repository": {
-		"type": "git",
-		"url": ""
-	},
-	"keywords": [
-		"discord-js"
-	],
-	"author": {
-		"name": ""
-	},
-	"contributors": [],
-	"license": "MIT",
-	"homepage": "",
-	"dependencies": {
-		"@discordjs/rest": "^1.0.0",
-		"axios": "^1.8.1",
-		"discord-api-types": "^0.36.2",
-		"discord.js": "^14.0.2",
-		"rss-parser": "^3.13.0"
-	}
+    "scripts": {
+        "start": "node bot.js",
+        "dev": "nodemon bot.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Aardenfell/Cosmo"
+    },
+    "keywords": ["discord-js", "bot", "leveling", "voice-chat"],
+    "author": {
+        "name": "Aardenfell"
+    },
+    "contributors": [],
+    "license": "MIT",
+    "homepage": "YOUR_HOMEPAGE_URL_HERE",
+    "dependencies": {
+        "@discordjs/rest": "^1.0.0",
+        "axios": "^1.8.1",
+        "discord-api-types": "^0.36.2",
+        "discord.js": "^14.0.2",
+        "rss-parser": "^3.13.0"
+    }
 }
