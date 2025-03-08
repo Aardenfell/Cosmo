@@ -86,7 +86,6 @@ module.exports = {
                         .setDescription("The maximum number of active temp VCs.")
                         .setRequired(true)
                 )
-                .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator) // Hides from non-admins
         ),
 
     async execute(interaction) {
