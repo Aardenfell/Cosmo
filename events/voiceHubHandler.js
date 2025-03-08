@@ -56,11 +56,15 @@ module.exports = {
                     deny: overwrite.deny
                 }));
 
-                // Ensure @everyone can connect
-                const everyonePerms = permissionOverwrites.find(perm => perm.id === guild.id);
-                if (everyonePerms) {
-                    everyonePerms.allow.add(PermissionsBitField.Flags.Connect);
-                } else {
+                // Ensure @everyone can connect by overriding the hub's restrictions
+                permissionOverwrites = permissionOverwrites.map(perm =>
+                    perm.id === guild.id
+                        ? { ...perm, allow: perm.allow.add(PermissionsBitField.Flags.Connect), deny: perm.deny.remove(PermissionsBitField.Flags.Connect) }
+                        : perm
+                );
+
+                // If @everyone doesn't exist in the overwrites, add it
+                if (!permissionOverwrites.some(perm => perm.id === guild.id)) {
                     permissionOverwrites.push({
                         id: guild.id,
                         allow: [PermissionsBitField.Flags.Connect],
@@ -73,6 +77,7 @@ module.exports = {
                     id: member.id,
                     allow: [
                         PermissionsBitField.Flags.ManageChannels,
+                        PermissionsBitField.Flags.ManageRoles,
                         PermissionsBitField.Flags.MoveMembers,
                         PermissionsBitField.Flags.MuteMembers,
                         PermissionsBitField.Flags.DeafenMembers
@@ -82,7 +87,7 @@ module.exports = {
 
                 // Create a new temp VC
                 const tempVC = await guild.channels.create({
-                    name: `✧ ${hubConfig.base_name} ${member.user.username}'s VC ✧`,
+                    name: `✧${hubConfig.base_name} ${member.user.username}'s VC ✧`,
                     type: ChannelType.GuildVoice,
                     parent: hubConfig.category_id,
                     userLimit: config.voice_hubs.vc_user_limit,
@@ -111,7 +116,7 @@ module.exports = {
             if (tempVC && oldState.member.id === activeTempVCs[oldChannel.id].owner_id) {
                 setTimeout(async () => {
                     const updatedVC = guild.channels.cache.get(oldChannel.id);
-                    
+
                     if (!updatedVC) return; // Channel was deleted during delay
 
                     const remainingMembers = [...updatedVC.members.values()];
@@ -131,7 +136,7 @@ module.exports = {
                     // Rename the VC to reflect new owner
                     const hubConfig = config.voice_hubs.hubs.find(h => h.category_id === updatedVC.parentId);
                     if (hubConfig) {
-                        await updatedVC.setName(`✧ ${hubConfig.base_name} ${newOwner.user.username}'s VC ✧`);
+                        await updatedVC.setName(`✧${hubConfig.base_name} ${newOwner.user.username}'s VC ✧`);
                     }
 
                     console.log(`🔄 Transferred ownership to ${newOwner.user.username}`);
