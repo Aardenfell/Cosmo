@@ -3,11 +3,21 @@
  * @description Manage temporary voice channels (VCs).
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, PermissionsBitField } = require("discord.js");
 const path = require("path");
+const fs = require("fs");
+const config = require("../../../config.json");
+const tempVCs = require("../../../temp_vcs.json");
+
+/**
+ * Checks if the user has the admin role.
+ */
+function hasAdminRole(member) {
+    return member.roles.cache.has(config.permissions.admin);
+}
 
 /**
  * @type {import('../../../typings').SlashInteractionCommand}
@@ -63,9 +73,38 @@ module.exports = {
         ),
 
     async execute(interaction) {
+        const { member, guild } = interaction;
         const subcommand = interaction.options.getSubcommand();
         const subcommandsPath = path.join(__dirname, "subcommands");
 
+        // Ensure the user is in a voice channel
+        const userVC = member.voice.channel;
+        if (!userVC) {
+            return interaction.reply({
+                content: "❌ You must be in a temporary voice channel to use this command.",
+                ephemeral: true
+            });
+        }
+
+        // Check if the VC is a tracked temporary VC
+        const tempVCData = tempVCs[userVC.id];
+        if (!tempVCData) {
+            return interaction.reply({
+                content: "❌ This command can only be used in a temporary voice channel.",
+                ephemeral: true
+            });
+        }
+
+        // Check if the user is the owner of the temp VC or an admin
+        const isAdmin = hasAdminRole(member);
+        if (!isAdmin && tempVCData.owner_id !== member.id) {
+            return interaction.reply({
+                content: "❌ You must be the **owner** of this temporary voice channel to use this command.",
+                ephemeral: true
+            });
+        }
+
+        // Try executing the specific subcommand
         try {
             const subcommandFile = require(`${subcommandsPath}/${subcommand}.js`);
             await subcommandFile.execute(interaction);
