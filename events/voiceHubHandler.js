@@ -2,7 +2,7 @@
  * @file Voice Hub Handler (Creates and manages temporary voice chats)
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.1.0
+ * @version 1.2.0
  */
 
 const { ChannelType, PermissionsBitField } = require("discord.js");
@@ -48,7 +48,7 @@ module.exports = {
 
                 // Create a new temp VC
                 const tempVC = await guild.channels.create({
-                    name: `${hubConfig.base_name} - ${member.user.username}`,
+                    name: `✧ ${hubConfig.base_name} ${member.user.username}'s VC ✧`,
                     type: ChannelType.GuildVoice,
                     parent: hubConfig.category_id,
                     userLimit: config.voice_hubs.vc_user_limit,
@@ -69,8 +69,12 @@ module.exports = {
                 // Move the user to the temp VC
                 await member.voice.setChannel(tempVC);
 
-                // Store the VC
-                activeTempVCs[tempVC.id] = tempVC.id;
+                // Store the VC with proper structure
+                activeTempVCs[tempVC.id] = {
+                    owner_id: member.id,
+                    created_at: Math.floor(Date.now() / 1000)
+                };
+
                 saveActiveVCs(activeTempVCs);
             }
         }
