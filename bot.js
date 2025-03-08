@@ -32,8 +32,10 @@ const client = new Client({
 		GatewayIntentBits.DirectMessages,
 		GatewayIntentBits.GuildMessages,
 		GatewayIntentBits.MessageContent,
+		GatewayIntentBits.GuildVoiceStates,
+		GatewayIntentBits.GuildMessageReactions
 	],
-	partials: [Partials.Channel],
+	partials: [Partials.Message, Partials.Channel, Partials.User, Partials.Reaction],
 });
 
 /**********************************************************************/
@@ -292,7 +294,9 @@ for (const folder of triggerFolders) {
 		.filter((file) => file.endsWith(".js"));
 	for (const file of triggerFiles) {
 		const trigger = require(`./triggers/${folder}/${file}`);
-		client.triggers.set(trigger.name, trigger);
+		trigger.name.forEach((name) => {
+			client.triggers.set(name, trigger);
+		});
 	}
 }
 

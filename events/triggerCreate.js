@@ -2,7 +2,7 @@
  * @file Main trigger handler file.
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.0.0
+ * @version 1.0.1
  */
 
 module.exports = {
@@ -15,52 +15,38 @@ module.exports = {
 	 */
 
 	async execute(message) {
-		/**
-		 * @description The Message Content of the received message seperated by spaces (' ') in an array, this excludes prefix and command/alias itself.
-		 */
-
-		const args = message.content.split(/ +/);
-
-		// Checks if the trigger author is a bot. Comment this line if you want to reply to bots as well.
-
+		// Ignore bot messages
 		if (message.author.bot) return;
 
-		// Checking ALL triggers using every function and breaking out if a trigger was found.
-
-		/**
-		 * Checks if the message has a trigger.
-		 * @type {Boolean}
-		 * */
-
+		const messageContent = message.content.toLowerCase();
 		let triggered = false;
 
-		message.client.triggers.every((trigger) => {
-			if (triggered) return false;
+		// Loop through all registered triggers
+		for (const trigger of message.client.triggers.values()) {
+			if (triggered) break; // Stop checking if a trigger was already executed
 
-			trigger.name.every(async (name) => {
-				if (triggered) return false;
+			for (const name of trigger.name) {
+				if (triggered) break;
 
-				// If validated, it will try to execute the trigger.
+				// Create regex with word boundaries to prevent partial matches
+				const regex = new RegExp(`\\b${name}\\b`, "i");
 
-				if (message.content.includes(name)) {
+				// If message contains the trigger word
+				if (regex.test(messageContent)) {
 					try {
-						trigger.execute(message, args);
+						await trigger.execute(message);
 					} catch (error) {
-						// If triggereds fail, reply back!
-
 						console.error(error);
-
 						message.reply({
-							content: "there was an error trying to execute that trigger!",
+							content: "❌ There was an error trying to execute that trigger!",
 						});
 					}
 
-					// Set the trigger to be true & return.
-
+					// Mark trigger as executed and stop further matches
 					triggered = true;
-					return false;
+					break;
 				}
-			});
-		});
+			}
+		}
 	},
 };
