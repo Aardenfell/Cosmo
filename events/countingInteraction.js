@@ -3,7 +3,7 @@
  * @description Handles counting in a specific channel and enforces rules.
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.1.0
+ * @version 1.1.1
  */
 
 const { Events } = require("discord.js");
@@ -38,13 +38,15 @@ module.exports = {
         try {
             data = JSON.parse(fs.readFileSync(path, "utf8"));
         } catch (err) {
+            // Initialize counting data if file read fails
             data = { current_count: 0, last_user: null };
         }
 
         // Extract number from message
         const number = parseInt(message.content.trim(), 10);
 
-        if (isNaN(number)) return; // Ignore non-numeric messages
+        // Ignore non-numeric messages
+        if (isNaN(number)) return;
 
         // Validate counting sequence
         if (number === data.current_count + 1 && message.author.id !== data.last_user) {
@@ -63,6 +65,7 @@ module.exports = {
             await message.react("❌");
             await message.reply(`<@${message.author.id}> RUINED IT AT ${data.current_count + 1}!! Next number is 1. ${failReason}`);
 
+            // Reset counting data
             data.current_count = 0;
             data.last_user = null;
             fs.writeFileSync(path, JSON.stringify(data, null, 4));
