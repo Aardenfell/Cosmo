@@ -14,7 +14,7 @@ const path = require("path");
  * @type {import('../../typings').TriggerCommand}
  */
 module.exports = {
-    name: ["huzz"],
+    name: ["huzz", "muzz"],
 
     execute(message, args) {
         // Define the path to the image
