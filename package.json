@@ -1,6 +1,6 @@
 {
 	"name": "cosmo",
-	"version": "0.5.0",
+	"version": "0.6.0",
 	"description": "custom tailored discord bot for the Cosmic Cove community discord server",
 	"types": "./typings.d.ts",
 	"main": "bot.js",
