@@ -3,7 +3,7 @@
  * @description Allows admins to change the bot's status dynamically, including a custom text status.
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.4.0
+ * @version 1.3.0
  */
 
 const { SlashCommandBuilder, ActivityType } = require("discord.js");
@@ -17,10 +17,8 @@ function updatePresence(client, type, message) {
     };
 
     if (type === "CUSTOM") {
-        // Use activity type 4 (Custom Status equivalent)
         presenceData.activities = [{ type: ActivityType.Custom, name: message }];
     } else {
-        // Ensure correct ActivityType reference
         const activityTypes = {
             PLAYING: ActivityType.Playing,
             WATCHING: ActivityType.Watching,
@@ -60,11 +58,6 @@ module.exports = {
                         .setDescription("The custom status message.")
                         .setRequired(true)
                 )
-                .addStringOption(option =>
-                    option.setName("emoji")
-                        .setDescription("An optional emoji to include.")
-                        .setRequired(false)
-                )
         )
         .addSubcommand(subcommand =>
             subcommand
@@ -87,9 +80,6 @@ module.exports = {
             if (subcommand === "set") {
                 let type = interaction.options.getString("type").toUpperCase();
                 let message = interaction.options.getString("message");
-                const emoji = interaction.options.getString("emoji");
-
-                if (emoji) message = `${emoji} ${message}`;
 
                 updatePresence(client, type, message);
                 
@@ -100,10 +90,8 @@ module.exports = {
             }
 
             if (subcommand === "clear") {
-                // First, set the bot to idle to force status reset
                 client.user.setPresence({ status: "idle", activities: [] });
 
-                // Delay for a moment, then set back to online with no activities
                 setTimeout(() => {
                     client.user.setPresence({ status: "online", activities: [] });
                 }, 1000);
