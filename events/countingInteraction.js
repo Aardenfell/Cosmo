@@ -3,7 +3,7 @@
  * @description Handles counting in a specific channel and enforces rules.
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.0.1
+ * @version 1.0.2
  */
 
 const { Events } = require("discord.js");
@@ -46,9 +46,15 @@ module.exports = {
             fs.writeFileSync(path, JSON.stringify(data, null, 4));
             await message.react("✅"); // Correct count reaction
         } else {
+            // Determine the reason for failure
+            const failReason = (message.author.id === data.last_user)
+                ? "You can't count two numbers in a row."
+                : "Wrong number.";
+
             // Reset count and notify user
             await message.react("❌");
-            await message.reply(`<@${message.author.id}> RUINED IT AT ${data.current_count + 1}!! Next number is 1. Wrong number.`);
+            await message.reply(`<@${message.author.id}> RUINED IT AT ${data.current_count + 1}!! Next number is 1. ${failReason}`);
+
             data.current_count = 0;
             data.last_user = null;
             fs.writeFileSync(path, JSON.stringify(data, null, 4));
