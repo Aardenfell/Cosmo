@@ -1,12 +1,12 @@
 /**
  * @file Levels Config Subcommand
- * @description View or modify the leveling configuration with a detailed guide.
+ * @description View or modify the leveling configuration with an interactive select menu.
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.3.0
+ * @version 1.4.0
  */
 
-const { EmbedBuilder } = require("discord.js");
+const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
 const fs = require("fs");
 const config = require("../../../../config.json");
 
@@ -26,93 +26,80 @@ function hasAdminRole(member) {
 
 module.exports = {
     async execute(interaction) {
-        const { member, options } = interaction;
-        const field = options.getString("field");
-        const value = options.getString("value");
+        const { member } = interaction;
 
-        // If no field is provided, show full config with a guide
-        if (!field) {
-            const embed = new EmbedBuilder()
-                .setColor("#8f69f8")
-                .setTitle("📜 Leveling Configuration")
-                .setDescription(
-                    "🔧 **Current Settings:**\n" +
-                    `**Leveling Enabled:** ${config.leveling.enabled ? "✅ Enabled" : "❌ Disabled"}\n` +
-                    `**Message XP:** ${config.leveling.xp_methods.message_xp.enabled ? "✅ On" : "❌ Off"} (Min: ${config.leveling.xp_methods.message_xp.min_xp}, Max: ${config.leveling.xp_methods.message_xp.max_xp}, Cooldown: ${config.leveling.xp_methods.message_xp.cooldown}s)\n` +
-                    `**Voice XP:** ${config.leveling.xp_methods.voice_xp.enabled ? "✅ On" : "❌ Off"} (Min: ${config.leveling.xp_methods.voice_xp.min_xp}, Max: ${config.leveling.xp_methods.voice_xp.max_xp}, Cooldown: ${config.leveling.xp_methods.voice_xp.cooldown}s)\n` +
-                    `**Reaction XP:** ${config.leveling.xp_methods.reaction_xp.enabled ? "✅ On" : "❌ Off"} (Min: ${config.leveling.xp_methods.reaction_xp.min_xp}, Max: ${config.leveling.xp_methods.reaction_xp.max_xp}, Cooldown: ${config.leveling.xp_methods.reaction_xp.cooldown}s)\n` +
-                    `**Base XP:** ${config.leveling.level_formula.base_xp} | **XP Multiplier:** ${config.leveling.level_formula.multiplier}\n` +
-                    `**Level-up Messages:** ${config.leveling.levelup_messages.enabled ? "✅ On" : "❌ Off"} | **Channel:** <#${config.leveling.levelup_messages.channel_id}>\n\n` +
-                    "📖 **How to Modify Settings:**\n" +
-                    "Use `/levels config <field> <value>` to modify a setting.\n\n" +
-                    "**✅ Available Fields:**\n" +
-                    "1️⃣ **General Settings**\n" +
-                    "`enabled` - Turns leveling system on/off (`true` or `false`).\n\n" +
-                    "2️⃣ **XP Methods**\n" +
-                    "`xp_methods.message_xp.enabled` - Enable/Disable message XP (`true` or `false`).\n" +
-                    "`xp_methods.message_xp.min_xp` - Minimum XP per message.\n" +
-                    "`xp_methods.message_xp.max_xp` - Maximum XP per message.\n" +
-                    "`xp_methods.message_xp.cooldown` - Cooldown (in seconds) between XP gains.\n\n" +
-                    "`xp_methods.voice_xp.enabled` - Enable/Disable voice XP (`true` or `false`).\n" +
-                    "`xp_methods.voice_xp.min_xp` - Minimum XP per minute in VC.\n" +
-                    "`xp_methods.voice_xp.max_xp` - Maximum XP per minute in VC.\n" +
-                    "`xp_methods.voice_xp.cooldown` - Cooldown (in seconds).\n\n" +
-                    "`xp_methods.reaction_xp.enabled` - Enable/Disable reaction XP (`true` or `false`).\n" +
-                    "`xp_methods.reaction_xp.min_xp` - Minimum XP per reaction.\n" +
-                    "`xp_methods.reaction_xp.max_xp` - Maximum XP per reaction.\n" +
-                    "`xp_methods.reaction_xp.cooldown` - Cooldown (in seconds).\n\n" +
-                    "3️⃣ **Level Formula**\n" +
-                    "`level_formula.base_xp` - XP needed for **level 1**.\n" +
-                    "`level_formula.multiplier` - Scaling factor for level-up difficulty.\n\n" +
-                    "4️⃣ **Level-up Messages**\n" +
-                    "`levelup_messages.enabled` - Enable/Disable level-up messages (`true` or `false`).\n" +
-                    "`levelup_messages.channel_id` - ID of the level-up announcement channel.\n\n" +
-                    "**🛠️ Example Modifications:**\n" +
-                    "`/levels config enabled false` *(Disable leveling system)*\n" +
-                    "`/levels config xp_methods.message_xp.enabled false` *(Turn off message XP)*\n" +
-                    "`/levels config xp_methods.voice_xp.cooldown 600` *(Set voice XP cooldown to 600s)*"
-                )
-                .setFooter({ text: "Use valid fields and values to modify settings." });
-
-            return interaction.reply({ embeds: [embed] });
-        }
-
-        // Admin check for modifications
+        // Ensure user is an admin
         if (!hasAdminRole(member)) {
             return interaction.reply({ content: "❌ You do not have permission to modify the configuration.", ephemeral: true });
         }
 
-        // Ensure the field exists in config
-        let keys = field.split(".");
-        let target = config.leveling;
+        // Create an embed layout
+        const embed = new EmbedBuilder()
+            .setColor("#8f69f8")
+            .setTitle("📜 Leveling Configuration")
+            .setDescription("Modify the leveling system settings using the select menu below.")
+            .addFields(
+                { name: "🔧 General Settings", value: `**Enabled:** ${config.leveling.enabled ? "✅ Yes" : "❌ No"}` },
+                { 
+                    name: "💬 Message XP", 
+                    value: `**Enabled:** ${config.leveling.xp_methods.message_xp.enabled ? "✅ Yes" : "❌ No"}
+                    **Min XP:** ${config.leveling.xp_methods.message_xp.min_xp} 
+                    **Max XP:** ${config.leveling.xp_methods.message_xp.max_xp}
+                    **Cooldown:** ${config.leveling.xp_methods.message_xp.cooldown}s`
+                },
+                { 
+                    name: "🎤 Voice XP", 
+                    value: `**Enabled:** ${config.leveling.xp_methods.voice_xp.enabled ? "✅ Yes" : "❌ No"}
+                    **Min XP:** ${config.leveling.xp_methods.voice_xp.min_xp}
+                    **Max XP:** ${config.leveling.xp_methods.voice_xp.max_xp}
+                    **Cooldown:** ${config.leveling.xp_methods.voice_xp.cooldown}s`
+                },
+                { 
+                    name: "📌 Reaction XP", 
+                    value: `**Enabled:** ${config.leveling.xp_methods.reaction_xp.enabled ? "✅ Yes" : "❌ No"}
+                    **Min XP:** ${config.leveling.xp_methods.reaction_xp.min_xp}
+                    **Max XP:** ${config.leveling.xp_methods.reaction_xp.max_xp}
+                    **Cooldown:** ${config.leveling.xp_methods.reaction_xp.cooldown}s`
+                },
+                { 
+                    name: "📊 Level Formula", 
+                    value: `**Base XP:** ${config.leveling.level_formula.base_xp}
+                    **Multiplier:** ${config.leveling.level_formula.multiplier}`
+                },
+                { 
+                    name: "🔔 Level-up Messages", 
+                    value: `**Enabled:** ${config.leveling.levelup_messages.enabled ? "✅ Yes" : "❌ No"}
+                    **Channel:** <#${config.leveling.levelup_messages.channel_id}>`
+                }
+            )
+            .setFooter({ text: "Select a setting below to modify it." });
 
-        for (let i = 0; i < keys.length - 1; i++) {
-            if (target[keys[i]] === undefined) {
-                return interaction.reply({ content: `❌ Invalid field: **${field}**\nCheck the **Available Fields** section in the guide.`, ephemeral: true });
-            }
-            target = target[keys[i]];
-        }
+        // Create a select menu for modifying settings
+        const selectMenu = new StringSelectMenuBuilder()
+            .setCustomId("level_config_select")
+            .setPlaceholder("📌 Select a setting to modify")
+            .addOptions(
+                { label: "Toggle Leveling", value: "enabled", description: "Enable/Disable the leveling system" },
+                { label: "Toggle Message XP", value: "xp_methods.message_xp.enabled", description: "Enable/Disable Message XP" },
+                { label: "Set Message XP Min", value: "xp_methods.message_xp.min_xp", description: "Set minimum XP for messages" },
+                { label: "Set Message XP Max", value: "xp_methods.message_xp.max_xp", description: "Set maximum XP for messages" },
+                { label: "Set Message XP Cooldown", value: "xp_methods.message_xp.cooldown", description: "Set cooldown for message XP" },
+                { label: "Toggle Voice XP", value: "xp_methods.voice_xp.enabled", description: "Enable/Disable Voice XP" },
+                { label: "Set Voice XP Min", value: "xp_methods.voice_xp.min_xp", description: "Set minimum XP for voice activity" },
+                { label: "Set Voice XP Max", value: "xp_methods.voice_xp.max_xp", description: "Set maximum XP for voice activity" },
+                { label: "Set Voice XP Cooldown", value: "xp_methods.voice_xp.cooldown", description: "Set cooldown for voice XP" },
+                { label: "Toggle Reaction XP", value: "xp_methods.reaction_xp.enabled", description: "Enable/Disable Reaction XP" },
+                { label: "Set Reaction XP Min", value: "xp_methods.reaction_xp.min_xp", description: "Set minimum XP for reactions" },
+                { label: "Set Reaction XP Max", value: "xp_methods.reaction_xp.max_xp", description: "Set maximum XP for reactions" },
+                { label: "Set Reaction XP Cooldown", value: "xp_methods.reaction_xp.cooldown", description: "Set cooldown for reaction XP" },
+                { label: "Set Base XP", value: "level_formula.base_xp", description: "Set XP needed for Level 1" },
+                { label: "Set XP Multiplier", value: "level_formula.multiplier", description: "Adjust XP scaling factor" },
+                { label: "Toggle Level-up Messages", value: "levelup_messages.enabled", description: "Enable/Disable level-up messages" },
+                { label: "Set Level-up Channel", value: "levelup_messages.channel_id", description: "Set channel for level-up messages" }
+            );
 
-        let lastKey = keys[keys.length - 1];
-        if (target[lastKey] === undefined) {
-            return interaction.reply({ content: `❌ Invalid field: **${field}**\nCheck the **Available Fields** section in the guide.`, ephemeral: true });
-        }
+        const row = new ActionRowBuilder().addComponents(selectMenu);
 
-        // Convert the value to correct type
-        let newValue = value;
-        if (typeof target[lastKey] === "boolean") {
-            newValue = value.toLowerCase() === "true";
-        } else if (!isNaN(value)) {
-            newValue = parseFloat(value);
-        }
-
-        // Update config
-        target[lastKey] = newValue;
-        saveConfig(config);
-
-        return interaction.reply({
-            content: `✅ Successfully updated **${field}** to **${newValue}**.`,
-            ephemeral: true
-        });
+        return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
     }
 };
