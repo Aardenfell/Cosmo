@@ -3,13 +3,12 @@
  * @description Handles counting in a specific channel and enforces rules.
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.0.2
+ * @version 1.1.0
  */
 
 const { Events } = require("discord.js");
 const fs = require("fs");
 const path = "./data/counting.json";
-const config = require("../config.json");
 
 module.exports = {
     name: Events.MessageCreate,
@@ -19,11 +18,20 @@ module.exports = {
      * @param {import('discord.js').Message} message The message object.
      */
     async execute(message) {
-        // Ignore messages from bots and check if counting is enabled
-        if (message.author.bot || !config.counting.enabled) return;
+        // Ignore messages from bots
+        if (message.author.bot) return;
 
-        // Ensure the message is in the correct counting channel
-        if (message.channel.id !== config.counting.channel_id) return;
+        // Dynamically load config on each execution
+        let config;
+        try {
+            config = JSON.parse(fs.readFileSync("./config.json", "utf8"));
+        } catch (err) {
+            console.error("Error loading config.json:", err);
+            return;
+        }
+
+        // Ensure counting is enabled and in the correct channel
+        if (!config.counting?.enabled || message.channel.id !== config.counting.channel_id) return;
 
         // Load current counting data
         let data;
