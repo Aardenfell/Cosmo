@@ -1,14 +1,9 @@
-/**
- * @file Levels Config Select Menu Handler
- * @description Handles modifications to the leveling system using a select menu.
- * @author Aardenfell
- * @since 1.0.0
- * @version 1.0.0
- */
-
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const config = require("../../../config.json");
+
+// Store ephemeral message references
+const ephemeralMessages = new Map();
 
 /**
  * Saves the updated config file.
@@ -18,7 +13,7 @@ function saveConfig(updatedConfig) {
 }
 
 /**
- * Updates and sends the configuration embed.
+ * Updates the configuration embed.
  */
 async function updateConfigEmbed(interaction) {
     const embed = new EmbedBuilder()
@@ -68,6 +63,14 @@ module.exports = {
     id: "level_config_select",
     async execute(interaction) {
         const selectedOption = interaction.values[0];
+
+        // Ensure ephemeralMessages exists on the client
+        if (!interaction.client.ephemeralMessages) {
+            interaction.client.ephemeralMessages = new Map();
+        }
+
+        // Store ephemeral message reference for later use in modals
+        interaction.client.ephemeralMessages.set(interaction.user.id, interaction);
 
         // Boolean settings (toggle instantly)
         const booleanSettings = [
