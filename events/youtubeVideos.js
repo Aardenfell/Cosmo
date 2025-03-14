@@ -70,12 +70,15 @@ async function announceYouTubeVideo(client, channelId, videoData, streamerName, 
 
     const roleMention = config.permissions.content_notifier ? `<@&${config.permissions.content_notifier}>` : "";
 
+    const videoId = videoUrl.split("v=")[1];
+    const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+
     const embed = new EmbedBuilder()
         .setColor("#FF0000") // YouTube red
         .setTitle(`${streamerName} uploaded a new video!`)
         .setURL(videoUrl)
         .setDescription(`**${videoData.title}**`)
-        .setImage(videoData.enclosure?.url || config.youtube.default_thumbnail)
+        .setImage(thumbnailUrl)
         .setFooter({ text: "Click the title to watch the video!" });
 
     channel.send({
@@ -93,12 +96,15 @@ async function announceYouTubeLive(client, channelId, streamData, streamerName, 
 
     const roleMention = config.permissions.content_notifier ? `<@&${config.permissions.content_notifier}>` : "";
 
+    const videoId = videoUrl.split("v=")[1];
+    const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+
     const embed = new EmbedBuilder()
         .setColor("#FF0000") // YouTube red
         .setTitle(`${streamerName} is now LIVE on YouTube!`)
         .setURL(videoUrl)
         .setDescription(`**${streamData.title}**`)
-        .setImage(streamData.enclosure?.url || config.youtube.default_thumbnail)
+        .setImage(thumbnailUrl)
         .setFooter({ text: "Click the title to watch the stream!" });
 
     channel.send({
