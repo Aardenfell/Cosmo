@@ -15,6 +15,7 @@ const path = require("path");
  */
 module.exports = {
     name: ["again"],
+    isMeme: true,
 
     execute(message, args) {
         // Define the path to the image
