@@ -2,7 +2,7 @@
  * @file Voice Hub Handler (Creates and manages temporary voice chats)
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.5.0
+ * @version 1.6.0
  */
 
 const { ChannelType, PermissionsBitField, EmbedBuilder } = require("discord.js");
@@ -118,7 +118,7 @@ module.exports = {
 };
 
 /**
- * Sends the VC info embed to the built-in text chat of the voice channel.
+ * Fetches command IDs dynamically and sends an updated embed.
  */
 async function sendVcInfoEmbed(voiceChannel, owner) {
     if (!voiceChannel) return;
@@ -128,17 +128,25 @@ async function sendVcInfoEmbed(voiceChannel, owner) {
         const textChannel = await voiceChannel.guild.channels.fetch(voiceChannel.id);
         if (!textChannel || textChannel.type !== ChannelType.GuildVoice) return;
 
-        // Create the embed
+        // Fetch command list and store IDs in a map
+        const commands = await voiceChannel.guild.commands.fetch();
+        const commandIds = {};
+        for (const [id, command] of commands) {
+            commandIds[command.name] = id;
+        }
+
+        // Create the embed with clickable commands and properly formatted placeholders
         const embed = new EmbedBuilder()
-            .setColor("#7289DA")
+            .setColor("#8f69f8")
             .setTitle("🎙️ Temporary Voice Chat Controls")
             .setDescription("You have control over this voice chat. Use the following commands:")
             .addFields(
-                { name: "/vc rename <name>", value: "Rename your voice channel." },
-                { name: "/vc limit <number>", value: "Set a user limit for your voice channel." },
-                { name: "/vc lock", value: "Lock the voice channel so no one else can join." },
-                { name: "/vc unlock", value: "Unlock the voice channel to allow users to join." },
-                { name: "/vc transfer <user>", value: "Transfer ownership of this voice channel." }
+                { name: `</voice rename:${commandIds["voice"]}> \`<name>\``, value: "Rename your voice channel." },
+                { name: `</voice limit:${commandIds["voice"]}> \`<number>\``, value: "Set a user limit for your voice channel." },
+                { name: `</voice lock:${commandIds["voice"]}>`, value: "Lock the voice channel so no one else can join." },
+                { name: `</voice unlock:${commandIds["voice"]}>`, value: "Unlock the voice channel to allow users to join." },
+                { name: `</voice hide:${commandIds["voice"]}>`, value: "Hide the voice channel from non-members." },
+                { name: `</voice show:${commandIds["voice"]}>`, value: "Show the voice channel to non-members." }
             )
             .setFooter({ text: "Use these commands to manage your temporary VC." });
 
