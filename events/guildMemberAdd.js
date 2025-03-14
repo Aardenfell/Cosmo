@@ -5,7 +5,9 @@
  * @version 1.0.1
  */
 
-const { EmbedBuilder } = require("discord.js");
+const { EmbedBuilder, AttachmentBuilder } = require("discord.js");
+const fs = require("fs");
+const path = require("path");
 const config = require("../config.json");
 
 module.exports = {
@@ -13,8 +15,8 @@ module.exports = {
 
     async execute(member) {
         const welcomeChannelId = config.welcome.channel_id; // Channel ID for welcome messages
-        const welcomeImageUrl = config.welcome.image_url; // Large banner image
-        const thumbnailUrl = config.welcome.thumbnail_url; // Small image
+        const imagePath = path.resolve(__dirname, "..", config.welcome.image_url); // Large banner image
+        const thumbnailPath = path.resolve(__dirname, "..", config.welcome.thumbnail_url); // Small image
 
         if (!welcomeChannelId) {
             console.error("Welcome channel ID is not set in config.json!");
@@ -27,6 +29,10 @@ module.exports = {
             return;
         }
 
+        const bannerAttachment = new AttachmentBuilder(imagePath);
+        const thumbnailAttachment = new AttachmentBuilder(thumbnailPath);
+
+
         // Get the current member count
         const memberCount = member.guild.memberCount;
 
@@ -35,11 +41,11 @@ module.exports = {
             .setColor("#8f69f8") // Soft purple for a cozy feel
             .setTitle("✧ Cosmic Cove ✧")
             .setDescription(`✧ Welcome ${member} to the ✧ Cosmic Cove ✧! You are our **${memberCount}th** member. ʚ♡ɞ˚`)
-            .setImage(welcomeImageUrl) // Large banner image
-            .setThumbnail(thumbnailUrl) // Small image
+            .setImage(`attachment://${path.basename(imagePath)}`) // Large banner image
+            .setThumbnail(`attachment://${path.basename(thumbnailPath)}`) // Small image
             .setFooter({ text: "Enjoy your stay in the Cosmic Cove!" });
 
         // Send the welcome message
-        channel.send({ embeds: [embed] });
+        channel.send({ embeds: [embed], files: [bannerAttachment, thumbnailAttachment] });
     }
 };
