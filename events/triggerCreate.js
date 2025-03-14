@@ -28,6 +28,9 @@ module.exports = {
 			for (const name of trigger.name) {
 				if (triggered) break;
 
+				// Prevent meme triggers from running in DMs
+				if (!message.guild && trigger.isMeme) continue;
+
 				// Create regex with word boundaries to prevent partial matches
 				const regex = new RegExp(`\\b${name}\\b`, "i");
 
