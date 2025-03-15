@@ -2,7 +2,7 @@
  * @file Welcome & AutoBan Event Handler for New Members
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.1.0
+ * @version 1.2.0
  */
 
 const { EmbedBuilder, AttachmentBuilder } = require("discord.js");
@@ -43,10 +43,28 @@ module.exports = {
         if (autobanConfig.enabled && !whitelist.includes(member.id)) {
             if (accountAge < minAccountAge) {
                 try {
-                    await member.ban({ reason: "Account younger than the required age." });
+                    // **Send DM Notification**
+                    const dmEmbed = new EmbedBuilder()
+                        .setColor("#ff0000")
+                        .setTitle("🚨 AutoBan Notification")
+                        .setDescription(
+                            `Hello **${member.user.tag}**,  
+                            You have been **automatically banned** from **${guild.name}** because your account is younger than **${minAccountAge / 3600000
+                            } hours**.\n\n
+                            If you believe this was a mistake, you may appeal by messaging **@aardenfell**.`
+                        )
+                        .setFooter({ text: "AutoBan System | Contact @aardenfell for an appeal." })
+                        .setTimestamp();
+
+                    await member.send({ embeds: [dmEmbed] }).catch(() => {
+                        console.warn(`⚠️ Could not send DM to ${member.user.tag}. (DMs may be closed.)`);
+                    });
+
+                    // **Ban the User**
+                    await member.ban({ reason: "Account younger than required age." });
                     console.log(`🔨 AutoBanned ${member.user.tag} (ID: ${member.id}) - Account too new.`);
 
-                    // Log autoban to moderation log channel
+                    // **Log autoban to moderation log channel**
                     const logChannel = guild.channels.cache.get(logChannelId);
                     if (logChannel) {
                         const embed = new EmbedBuilder()
@@ -71,7 +89,7 @@ module.exports = {
             return;
         }
 
-        const channel = guild.channels.cache.get(welcomeChannelId);
+        const channel = member.guild.channels.cache.get(welcomeChannelId);
         if (!channel) {
             console.error(`⚠️ Channel ID ${welcomeChannelId} not found.`);
             return;
