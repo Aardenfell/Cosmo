@@ -10,13 +10,20 @@ const { getYouTubeStreamers, getSeenVideos, saveSeenVideos } = require("../utils
 const { EmbedBuilder } = require("discord.js");
 const config = require("../config.json");
 
-const CHECK_INTERVAL = 1000; // 15 minutes
+const CHECK_INTERVAL = 1000;
 const parser = new Parser();
+
+let isDowntime = false; // Global downtime flag
 
 /**
  * Periodically check for new YouTube videos or livestreams via RSS.
  */
 async function checkYouTubeContent(client) {
+    if (isDowntime) {
+        console.warn("⏸️ Skipping YouTube RSS check due to downtime.");
+        return;
+    }
+    
     const announceChannelId = config.youtube.announce_channel;
     if (!announceChannelId) {
         console.error("YouTube announce channel is not set in config.json!");

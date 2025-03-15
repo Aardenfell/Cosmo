@@ -2,7 +2,7 @@
  * @file Main File of the bot, responsible for registering events, commands, interactions etc.
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 // Declare constants which will be used throughout the bot.
@@ -14,6 +14,7 @@ const {
 	GatewayIntentBits,
 	Partials,
 } = require("discord.js");
+const path = require("path");
 const { REST } = require("@discordjs/rest");
 const { Routes } = require("discord-api-types/v9");
 const { token, client_id, test_guild_id } = require("./config.json");
@@ -301,5 +302,36 @@ for (const folder of triggerFolders) {
 }
 
 // Login into your client application with bot's token.
+
+/**********************************************************************/
+// Heartbeat Monitor
+
+const { saveDowntimeTimestamp } = require("./utils/downDetector");
+
+let lastHeartbeat = Date.now();
+const HEARTBEAT_INTERVAL = 30 * 1000; // 30 seconds
+const DOWNTIME_THRESHOLD = 1 * 60 * 1000; // 2 minutes without heartbeat = likely downtime
+let isDowntime = false;
+
+client.on("debug", (info) => {
+    if (info.includes("Heartbeat acknowledged")) {
+        lastHeartbeat = Date.now();
+        if (isDowntime) {
+            console.log("✅ Bot heartbeat detected again, recovering...");
+            isDowntime = false;
+        }
+    }
+});
+
+// Heartbeat Monitor
+setInterval(() => {
+    const timeSinceLastHeartbeat = Date.now() - lastHeartbeat;
+
+    if (timeSinceLastHeartbeat > DOWNTIME_THRESHOLD && !isDowntime) {
+        console.warn(`⚠️ Potential downtime detected. No heartbeat for ${timeSinceLastHeartbeat / 1000}s.`);
+        isDowntime = true;
+        saveDowntimeTimestamp(); // Save downtime
+    }
+}, HEARTBEAT_INTERVAL);
 
 client.login(token);
