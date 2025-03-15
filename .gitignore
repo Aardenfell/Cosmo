@@ -114,3 +114,4 @@ data/youtube-seen.json
 data/twitch-streamers.json
 data/levels.json
 data/*
+docs/youtube-api-integration-design.md

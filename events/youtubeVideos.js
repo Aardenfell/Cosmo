@@ -1,8 +1,8 @@
 /**
- * @file YouTube Video Upload Announcement Handler
+ * @file YouTube Announcement Handler (Streams & Videos via RSS)
  * @author Aardenfell
  * @since 1.0.0
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 const Parser = require("rss-parser");
@@ -10,13 +10,13 @@ const { getYouTubeStreamers, getSeenVideos, saveSeenVideos } = require("../utils
 const { EmbedBuilder } = require("discord.js");
 const config = require("../config.json");
 
-const CHECK_INTERVAL = 15 * 60 * 1000; // 15 minutes (previously 5)
+const CHECK_INTERVAL = 1000; // 15 minutes
 const parser = new Parser();
 
 /**
- * Periodically check for new YouTube video uploads via RSS.
+ * Periodically check for new YouTube videos or livestreams via RSS.
  */
-async function checkYouTubeVideos(client) {
+async function checkYouTubeContent(client) {
     const announceChannelId = config.youtube.announce_channel;
     if (!announceChannelId) {
         console.error("YouTube announce channel is not set in config.json!");
@@ -33,36 +33,52 @@ async function checkYouTubeVideos(client) {
             const feed = await parser.parseURL(feedUrl);
             if (!feed.items.length) continue;
 
-            const latestVideo = feed.items[0]; // Newest video
-            if (seenVideos[channel_id] === latestVideo.id) continue; // Skip if already posted
+            const latestContent = feed.items[0]; // Most recent content
+            const videoId = latestContent.id.replace("yt:video:", ""); // Extract video ID
+            const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
-            seenVideos[channel_id] = latestVideo.id;
+            // ✅ Fix: Ensure metadata fields exist before accessing them
+            const isLive =
+                latestContent["media:group"]?.["media:community"]?.["media:starRating"] === undefined || // No rating = likely a stream
+                latestContent["media:group"]?.["media:live"] === "true"; // Explicitly marked live
+
+            // Prevent duplicate announcements
+            if (seenVideos[channel_id] === videoId) continue;
+
+            seenVideos[channel_id] = videoId;
             saveSeenVideos(seenVideos);
 
-            announceYouTubeVideo(client, announceChannelId, latestVideo, name);
+            // Announce based on content type
+            if (isLive) {
+                announceYouTubeLive(client, announceChannelId, latestContent, name, videoUrl);
+            } else {
+                announceYouTubeVideo(client, announceChannelId, latestContent, name, videoUrl);
+            }
         } catch (error) {
             console.error(`Error fetching RSS feed for ${name}:`, error.message);
         }
     }
 }
 
+
 /**
  * Announce a new YouTube video upload.
  */
-async function announceYouTubeVideo(client, channelId, videoData, streamerName) {
+async function announceYouTubeVideo(client, channelId, videoData, streamerName, videoUrl) {
     const channel = await client.channels.fetch(channelId);
     if (!channel) return console.error(`Channel ID ${channelId} not found.`);
 
-    const roleMention = config.permissions.content_notifier
-        ? `<@&${config.permissions.content_notifier}>`
-        : "";
+    const roleMention = config.permissions.content_notifier ? `<@&${config.permissions.content_notifier}>` : "";
+
+    const videoId = videoUrl.split("v=")[1];
+    const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
 
     const embed = new EmbedBuilder()
         .setColor("#FF0000") // YouTube red
         .setTitle(`${streamerName} uploaded a new video!`)
-        .setURL(videoData.link)
+        .setURL(videoUrl)
         .setDescription(`**${videoData.title}**`)
-        .setImage(videoData.enclosure?.url || config.youtube.default_thumbnail)
+        .setImage(thumbnailUrl)
         .setFooter({ text: "Click the title to watch the video!" });
 
     channel.send({
@@ -72,13 +88,39 @@ async function announceYouTubeVideo(client, channelId, videoData, streamerName) 
 }
 
 /**
- * Start the YouTube video check loop.
+ * Announce a YouTube livestream going live.
+ */
+async function announceYouTubeLive(client, channelId, streamData, streamerName, videoUrl) {
+    const channel = await client.channels.fetch(channelId);
+    if (!channel) return console.error(`Channel ID ${channelId} not found.`);
+
+    const roleMention = config.permissions.content_notifier ? `<@&${config.permissions.content_notifier}>` : "";
+
+    const videoId = videoUrl.split("v=")[1];
+    const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+
+    const embed = new EmbedBuilder()
+        .setColor("#FF0000") // YouTube red
+        .setTitle(`${streamerName} is now LIVE on YouTube!`)
+        .setURL(videoUrl)
+        .setDescription(`**${streamData.title}**`)
+        .setImage(thumbnailUrl)
+        .setFooter({ text: "Click the title to watch the stream!" });
+
+    channel.send({
+        content: `${roleMention} 📺 **${streamerName}** is now live! Go check them out!`,
+        embeds: [embed]
+    });
+}
+
+/**
+ * Start the YouTube content check loop.
  */
 module.exports = {
     name: "ready",
     once: true,
     async execute(client) {
-        console.log("✅ YouTube video check (RSS) started.");
-        setInterval(() => checkYouTubeVideos(client), CHECK_INTERVAL);
+        console.log("✅ YouTube content check (RSS) started.");
+        setInterval(() => checkYouTubeContent(client), CHECK_INTERVAL);
     }
 };

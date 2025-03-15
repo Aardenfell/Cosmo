@@ -15,6 +15,7 @@ const path = require("path");
  */
 module.exports = {
 	name: ["<@1346939253082554389> are you proud of me?"],
+    isMeme: true,
 
 	execute(message, args) {
 		// Define the path to the image
