@@ -9,7 +9,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
-const WHITELIST_PATH = path.join(__dirname, "../../../data/autoban_whitelist.json");
+const WHITELIST_PATH = path.join(__dirname, "../../../../data/autoban_whitelist.json");
 
 /**
  * Load the whitelist from storage.
